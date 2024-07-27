@@ -204,3 +204,13 @@ input:checked + .tab_class {
 input:checked + .tab_class + .tab-container {
   display: block;
 }
+
+#canvas-container2 {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  justify-content: center;
+  align-items: center;
+}
