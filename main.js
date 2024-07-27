@@ -12,6 +12,8 @@ let nowIndexKey = -1;
 let originalColor = null;
 let selectedShape = null;
 let layerList;
+let fixFrontButton;
+let mode2D_f = 0;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
@@ -37,7 +39,7 @@ function setup() {
   setupColorSelector();
   definePoints();
   
-  defaultCameraZ = (height/2) / tan(PI/6) * 1.52;
+  defaultCameraZ = (height/2) / tan(PI/6) * 1.15;
   pg = createGraphics(800, 800);
 
   layerList = document.getElementById('layer-list');
@@ -52,6 +54,11 @@ function draw() {
   background(250);
   
   if (mode2D) {
+    push();
+    //resetMatrix(); // 座標系をリセット  
+    if (mode2D_f == 1) {
+      translate(-width/2, -height/2);
+    }
     for (let shape of shapes) {
       if (shape.type === 'awaji') {
         fill(0, 255, 0, 100);
@@ -61,8 +68,9 @@ function draw() {
         ellipse(shape.x, shape.y, shape.d);
       }
     }
+    pop();
   } else {
-    //drawAxis();
+    drawAxis();
     
     if (!cameraFixed) {
       orbitControl();
@@ -126,11 +134,11 @@ function drawLabels() {
 function drawAxis() {
   strokeWeight(1);
   stroke(255, 0, 0);
-  line(-200, 0, 0, 200, 0, 0);
+  line(-400, 0, 0, 400, 0, 0);
   stroke(0, 255, 0);
-  line(0, -200, 0, 0, 200, 0);
+  line(0, -400, 0, 0, 400, 0);
   stroke(0, 0, 255);
-  line(0, 0, -200, 0, 0, 200);
+  line(0, 0, -400, 0, 0, 400);
 }
 
 //逆三角形の描画
@@ -186,14 +194,41 @@ function convert() {
     document.getElementById('color-selector').classList.remove('hidden');
     
     // 正面固定ボタンを追加
-    let fixFrontButton = createButton('2D <~> 3D');
+    fixFrontButton = createButton('2D <~> 3D');
     fixFrontButton.position(width - 50, height - 40);
     fixFrontButton.mousePressed(toggleFixedFrontView);
 
     // zIndexを設定
     for (let i = 0; i < shapes.length; i++) {
       shapes[i].zIndex = i * 8;  // 8ずつマイナス方向にずらす
+      console.log(shapes[i].x, shapes[i].y);
     }
+  }else if(!mode2D){
+    camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
+    mode2D = true;
+    canvas.remove();
+    canvas = createCanvas(800, 800);
+    canvas.parent('canvas-container');
+    
+    document.getElementById('add-button-container').classList.remove('hidden');
+    document.getElementById('color-selector').classList.add('hidden');
+    
+    // 正面固定ボタンを削除
+    if (fixFrontButton) {
+      fixFrontButton.remove();
+    }
+  
+    // 座標を2Dモードに戻す
+    for (let shape of shapes) {
+      //shape.x += width / 2;
+      //shape.y += height / 2;
+      delete shape.zIndex;
+    }
+  
+    if(mode2D_f == 0){
+      mode2D_f = 1;
+    }
+    //translate(-width/2, -height/2);
   }
 }
 
@@ -202,7 +237,7 @@ function drawShape(shape, shapeIndex) {
   translate(shape.x - width/2, shape.y - height/2, shape.zIndex);
   let scaleValue = shape.scale * 1.62;
   scale(scaleValue);
-  
+  //console.log(shape.x, shape.y); 
   let points;
   if (shape.type === 'awaji') {
     points = awaji_points;
@@ -535,9 +570,11 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+  console.log(mouseX, mouseY);
   if (mode2D && selectedShape) {
     selectedShape.x = constrain(mouseX, selectedShape.d/2, width - selectedShape.d/2);
     selectedShape.y = constrain(mouseY, selectedShape.d/2, height - selectedShape.d/2);
+    console.log(selectedShape.x ,selectedShape.y);
   }
 }
 
