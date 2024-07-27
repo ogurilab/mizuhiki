@@ -201,7 +201,7 @@ function convert() {
     // zIndexを設定
     for (let i = 0; i < shapes.length; i++) {
       shapes[i].zIndex = i * 8;  // 8ずつマイナス方向にずらす
-      console.log(shapes[i].x, shapes[i].y);
+      //console.log(shapes[i].x, shapes[i].y);
     }
   }else if(!mode2D){
     camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
@@ -220,8 +220,6 @@ function convert() {
   
     // 座標を2Dモードに戻す
     for (let shape of shapes) {
-      //shape.x += width / 2;
-      //shape.y += height / 2;
       delete shape.zIndex;
     }
   
@@ -590,7 +588,19 @@ function updateLayerList() {
   layerList.innerHTML = '';
   shapes.forEach((shape, index) => {
     const li = document.createElement('li');
-    li.textContent = `${shape.type} ${index}`;
+    
+    // ドラッグハンドルの作成
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'drag-handle';
+    dragHandle.innerHTML = '&#9776;'; // Unicode for vertical ellipsis (⋮)
+    
+    // テキスト用のspan要素
+    const textSpan = document.createElement('span');
+    textSpan.textContent = `${shape.type} ${index}`;
+    
+    li.appendChild(dragHandle);
+    li.appendChild(textSpan);
+    
     li.draggable = true;
     li.addEventListener('dragstart', dragStart);
     li.addEventListener('dragover', dragOver);
@@ -601,17 +611,22 @@ function updateLayerList() {
 
 function dragStart(e) {
   e.dataTransfer.setData('text/plain', e.target.textContent);
+  e.target.classList.add('dragging');
 }
 
 function dragOver(e) {
   e.preventDefault();
+  const draggingElement = document.querySelector('.dragging');
+  if (draggingElement && e.target !== draggingElement) {
+    e.target.classList.add('drag-over');
+  }
 }
 
 function drop(e) {
   e.preventDefault();
   const data = e.dataTransfer.getData('text');
-  const draggedElement = Array.from(layerList.children).find(el => el.textContent === data);
-  const dropTarget = e.target;
+  const draggedElement = Array.from(layerList.children).find(el => el.textContent.includes(data));
+  const dropTarget = e.target.closest('li');
 
   if (draggedElement !== dropTarget) {
     const draggedIndex = Array.from(layerList.children).indexOf(draggedElement);
@@ -631,6 +646,9 @@ function drop(e) {
     // zIndexを更新
     updateShapeZIndex();
   }
+
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelector('.dragging').classList.remove('dragging');
 }
 
 function updateShapeZIndex() {

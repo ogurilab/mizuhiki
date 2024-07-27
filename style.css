@@ -104,7 +104,7 @@ main {
   position: absolute;
   left: 10px;
   top: 10px;
-  z-index: 1000; /* キャンバスの上に表示されるようにする */
+  z-index: 1000;
 }
 
 #layer-menu-button {
@@ -126,19 +126,42 @@ main {
   margin: 0;
   background-color: #f1f1f1;
   border: 1px solid #ddd;
-  max-height: 300px; /* リストの最大高さを制限 */
-  overflow-y: auto; /* スクロール可能にする */
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 #layer-list li {
+  display: flex;
+  align-items: center;
   padding: 10px;
   border-bottom: 1px solid #ddd;
   cursor: move;
-  background-color: white; /* 背景色を白に設定 */
+  background-color: white;
+  transition: background-color 0.2s;
 }
 
 #layer-list li:last-child {
   border-bottom: none;
+}
+
+.drag-handle {
+  margin-right: 10px;
+  color: #888;
+  font-size: 20px;
+  cursor: move;
+  padding-bottom: 3px; /* 必要に応じて調整 */
+}
+
+#layer-list li:hover {
+  background-color: #f0f0f0;
+}
+
+#layer-list li.dragging {
+  opacity: 0.5;
+}
+
+#layer-list li.drag-over {
+  border-top: 2px solid #4CAF50;
 }
 
 .hidden {
