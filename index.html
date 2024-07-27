@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+    <title>水引アート制作支援　キーボードによる色変換</title>
+  </head>
+  <body>
+    <main>
+    <div class="area">
+    <input type="radio" name="tab_name" id="tab1" checked>
+    <label class="tab_class" for="tab1">制作</label>
+    <div class="tab-container">
+    <section id="top-buttons">
+      <div id="add-button-container">
+        <button id="add-awaji-button" class="triangle-button"></button>
+        <button id="add-ume-button" class="circle-button"></button>
+      </div>
+      <div id="convert-button-container">
+        <button id="convert-button">変換</button>
+        <button id="reconvert-button" class="hidden">戻る</button>
+      </div>
+    </section>
+    <section id="size-colors-container">
+        <div id="awaji-size-selector" class="size-selector hidden">
+            <button class="size-option" data-size="1">1cm</button>
+            <button class="size-option" data-size="1.5">1.5cm</button>
+            <button class="size-option" data-size="2">2cm</button>
+            <button class="size-option" data-size="2.5">2.5cm</button>
+            <button class="size-option" data-size="3">3cm</button>
+        </div>
+        <div id="ume-size-selector" class="size-selector hidden">
+            <button class="size-option" data-size="1.5">1.5cm</button>
+            <button class="size-option" data-size="2.3">2.3cm</button>
+            <button class="size-option" data-size="2.8">2.8cm</button>
+            <button class="size-option" data-size="3.3">3.3cm</button>
+            <button class="size-option" data-size="4">4cm</button>
+        </div>
+    </section>
+    <div id="color-selector" class="hidden">
+        <label id="color-option" >右下のボタンで2Dモードに変更した後、「c → モデルの番号 → 外側から何番目か(0~)」の順にキーを押して色変更したいカーブを選択してください</label><hr>
+        <button class="color-option" data-color="red" style="background-color: red;"></button>
+        <button class="color-option" data-color="#a59aca" style="background-color: #a59aca;"></button>
+        <button class="color-option" data-color="2.8"></button>
+        <button class="color-option" data-color="3.3"></button>
+        <button class="color-option" data-color="4"></button>
+    </div>
+      <div id="canvas-container">
+        <div id="layer-menu">
+          <button id="layer-menu-button">Layers</button>
+          <ul id="layer-list" class="hidden"></ul>
+        </div>
+      </div>
+    </div>
+    <input type="radio" name="tab_name" id="tab2">
+    <label class="tab_class" for="tab2">完成図</label>
+    <div class="tab-container">
+      <div id="canvas-container2">
+      </div>
+    </div>
+    </div>
+    </main>
+    <script src="main.js"></script>
+  </body>
+</html>

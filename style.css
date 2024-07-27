@@ -1,0 +1,183 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  padding: 10px;
+}
+
+#top-buttons {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+#add-button-container {
+  margin-left: auto;
+  display: flex;
+}
+
+#add-button-container.hidden {
+  display: none;
+}
+
+.circle-button, .triangle-button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.circle-button {
+  border-radius: 50%;
+  background-color: black;
+}
+
+.triangle-button {
+  background-color: transparent;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,85 0,0 100,0" fill="black"/></svg>');
+  background-size: cover;
+}
+
+#convert-button {
+  padding: 5px 10px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+#reconvert-button {
+  padding: 5px 10px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+
+.size-selector {
+  position: relative;
+  top: 30px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.size-selector.hidden {
+  display: none;
+}
+
+.size-option {
+  margin: 0 5px;
+  padding: 5px 10px;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.size-option:hover {
+  background-color: #f0f0f0;
+}
+
+.color-option {
+    width: 30px;       
+    height: 30px;      
+    border: none;      
+    cursor: pointer;  
+}
+
+#color-selector.hidden {
+  display: none;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  justify-content: center;
+  align-items: center;
+}
+
+#layer-menu {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 1000; /* キャンバスの上に表示されるようにする */
+}
+
+#layer-menu-button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+#layer-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  max-height: 300px; /* リストの最大高さを制限 */
+  overflow-y: auto; /* スクロール可能にする */
+}
+
+#layer-list li {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  cursor: move;
+  background-color: white; /* 背景色を白に設定 */
+}
+
+#layer-list li:last-child {
+  border-bottom: none;
+}
+
+.hidden {
+  display: none;
+}
+
+.area {
+  width: 1000px;
+  margin: auto;
+  flex-wrap: wrap;
+  display: flex;
+}
+ 
+.tab_class {
+  width: 150px;
+  height: 30px;
+  background-color: darkgrey;
+  line-height: 30px;
+  font-size: 15px;
+  text-align: center;
+  display: block;
+  float: left;
+  order: -1;
+}
+ 
+input[name="tab_name"] {
+  display: none;
+}
+ 
+input:checked + .tab_class {
+  background-color: cadetblue;
+  color: aliceblue;
+}
+ 
+.tab-container {
+  display: none;
+  width: 100%;
+}
+ 
+input:checked + .tab_class + .tab-container {
+  display: block;
+}
