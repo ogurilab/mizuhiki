@@ -205,12 +205,35 @@ input:checked + .tab_class + .tab-container {
   display: block;
 }
 
+
+#complete-view-container {
+  /* コンテナ全体のスタイル */
+}
+
+h1 {
+  font-size: 24px;
+}
+
+#complete-view-container h1 {
+  /* タイトルのスタイル */
+  font-size: 24px;
+}
+
 #canvas-container2 {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* キャンバスコンテナのスタイル */
   width: 800px;
-  justify-content: center;
-  align-items: center;
+  height: 800px;
+  margin: 0 auto;
+}
+
+#complete-view-container hr {
+  /* 水平線のスタイル */
+  margin: 30px 0;
+  border: none;
+  height: 1px;
+  background-color: #333;
+}
+
+.additional-content {
+  /* 追加コンテンツのスタイル */
 }

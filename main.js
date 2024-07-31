@@ -13,8 +13,11 @@ let innerCurvesData = [];
 let layerList;
 //let fixFrontButton;
 //let mode2D_f = 0;
+let compShapes = [];
+let sketch2;
 
-let completeCanvas;
+
+//let completeCanvas;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
@@ -200,7 +203,7 @@ let sketch1 = new p5((p) => {
       
       // 正面固定ボタンを追加
       fixFrontButton = p.createButton('2D <~> 3D');
-      fixFrontButton.position(p.width - 50, p.height - 40);
+      fixFrontButton.position(p.width - 100, p.height - 40);
       fixFrontButton.mousePressed(p.toggleFixedFrontView);
 
       // zIndexを設定
@@ -208,6 +211,12 @@ let sketch1 = new p5((p) => {
         shapes[i].zIndex = i * 8;  // 8ずつマイナス方向にずらす
         //console.log(shapes[i].x, shapes[i].y);
       }
+
+      // compShapesを更新
+      compShapes = JSON.parse(JSON.stringify(shapes));
+      
+      // sketch2を再初期化
+      initializeCompleteView();
     }else if(!mode2D){
       p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       mode2D = true;
@@ -512,6 +521,110 @@ let sketch1 = new p5((p) => {
   }
 }, 'canvas-container');
 
+let additionalCanvas;
+
+function initializeCompleteView() {
+  const container = document.getElementById('complete-view-container');
+  container.innerHTML = ''; // コンテナをクリア
+
+  // キャンバスコンテナを追加
+  const canvasContainer = document.createElement('div');
+  canvasContainer.id = 'canvas-container2';
+  container.appendChild(canvasContainer);
+
+  // 既存のスケッチを削除
+  if (sketch2) {
+    sketch2.remove();
+  }
+
+  // sketch2を初期化
+  sketch2 = new p5((p) => {
+    p.setup = function() {
+      let canvas = p.createCanvas(800, 800, p.WEBGL);
+      canvas.parent('canvas-container2');
+      definePoints();
+    }
+
+    p.draw = function() {
+      p.background(250);
+      drawAxis(p);
+      p.orbitControl();
+      
+      for (let i = compShapes.length - 1; i >= 0; i--) {
+        drawShape(p, compShapes[i], i);
+      }
+    }
+  }, 'canvas-container2');
+
+  // 水平線を追加
+  const hr = document.createElement('hr');
+  container.appendChild(hr);
+
+  // 追加のキャンバスコンテナを追加
+  const additionalCanvasContainer = document.createElement('div');
+  additionalCanvasContainer.id = 'additional-canvas-container';
+  container.appendChild(additionalCanvasContainer);
+
+  // 既存の追加キャンバスを削除
+  if (additionalCanvas) {
+    additionalCanvas.remove();
+  }
+
+  // 追加のキャンバスを初期化
+  /*
+  additionalCanvas = new p5((p) => {
+    p.setup = function() {
+      let canvas = p.createCanvas(400, 400);
+      canvas.parent('additional-canvas-container');
+    }
+
+    p.draw = function() {
+      // 追加のキャンバスの描画ロジック
+      p.background(200);
+      p.text('追加のキャンバス', 10, 30);
+      // ここに追加のキャンバスの描画コードを記述
+    }
+  }, 'additional-canvas-container');*/
+
+  // 追加のテキストコンテンツ
+  const additionalContent = document.createElement('h1');
+  additionalContent.textContent = 'パーツ';
+  container.appendChild(additionalContent);
+}
+
+// タブ切り替え時にinitializeCompleteViewを呼び出す
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('label[for="tab2"]').addEventListener('click', initializeCompleteView);
+});
+
+/*完成図キャンバスの実装のみ
+これと、convert内でcompShapesの更新と関数の呼び出しを追加
+function initializeTab2() {
+  // タブ2が選択されたときに呼び出される関数
+  setTimeout(() => {
+    if (sketch2) {
+      sketch2.remove(); // 既存のスケッチを削除
+    }
+    sketch2 = new p5((p) => {
+      p.setup = function() {
+        let canvas = p.createCanvas(800, 800, p.WEBGL);
+        canvas.parent('canvas-container2');
+        definePoints();
+      }
+
+      p.draw = function() {
+        p.background(250);
+        drawAxis(p);
+        p.orbitControl();
+        
+        for (let i = compShapes.length - 1; i >= 0; i--) {
+          drawShape(p, compShapes[i], i);
+        }
+      }
+    }, 'canvas-container2');
+  }, 0);
+}
+*/
 
 //３次元軸の描画
 function drawAxis(p) {
