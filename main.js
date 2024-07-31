@@ -486,25 +486,29 @@ let sketch1 = new p5((p) => {
   }
 
   p.drop = function (e) {
-    e.preventDefault();
-    const data = e.dataTransfer.getData('text');
-    const draggedElement = Array.from(layerList.children).find(el => el.textContent.includes(data));
-    const dropTarget = e.target.closest('li');
+    e.preventDefault(); // デフォルトのドロップ動作を防止
+    const data = e.dataTransfer.getData('text'); // ドラッグ開始時に設定されたデータを取得
+    const draggedElement = Array.from(layerList.children).find(el => el.textContent.includes(data)); // ドラッグされた要素を特定
+    const dropTarget = e.target.closest('li'); // ドロップ先の最も近いli要素を取得
 
-    if (draggedElement !== dropTarget) {
-      const draggedIndex = Array.from(layerList.children).indexOf(draggedElement);
-      const dropIndex = Array.from(layerList.children).indexOf(dropTarget);
+    if (draggedElement !== dropTarget) { // ドラッグ元とドロップ先が異なる場合のみ処理を行う
+        const draggedIndex = Array.from(layerList.children).indexOf(draggedElement); // ドラッグされた要素のインデックスを取得
+        const dropIndex = Array.from(layerList.children).indexOf(dropTarget); // ドロップ先要素のインデックスを取得
 
-      // shapes配列の順序を更新
-      const [removedShape] = shapes.splice(draggedIndex, 1);
-      shapes.splice(dropIndex, 0, removedShape);
+        // shapes配列の順序を更新
+        const [removedShape] = shapes.splice(draggedIndex, 1); // ドラッグされた要素をshapes配列から削除し、その要素を取得
+        shapes.splice(dropIndex, 0, removedShape); // 削除した要素をドロップ先の位置に挿入
 
-      // DOMの順序を更新
-      if (dropIndex < draggedIndex) {
-        layerList.insertBefore(draggedElement, dropTarget);
-      } else {
-        layerList.insertBefore(draggedElement, dropTarget.nextSibling);
-      }
+        // innerCurvesDataの順序も同様に更新
+        const [removedInnerCurveData] = innerCurvesData.splice(draggedIndex, 1);
+        innerCurvesData.splice(dropIndex, 0, removedInnerCurveData);
+
+        // DOMの順序を更新
+        if (dropIndex < draggedIndex) {
+            layerList.insertBefore(draggedElement, dropTarget); // ドロップ先が上の場合、その位置に挿入
+        } else {
+            layerList.insertBefore(draggedElement, dropTarget.nextSibling); // ドロップ先が下の場合、その次の位置に挿入
+        }
 
       // zIndexを更新
       p.updateShapeZIndex();
