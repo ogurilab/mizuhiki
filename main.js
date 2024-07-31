@@ -45,6 +45,7 @@ let sketch1 = new p5((p) => {
   let fixFrontButton;
   let mode2D_f = 0;
   let pg;
+  let highlightedShapeIndex = -1;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -87,6 +88,16 @@ let sketch1 = new p5((p) => {
           p.ellipse(shape.x, shape.y, shape.d);
         }
       }
+
+      // ハイライトの描画
+      if (highlightedShapeIndex !== -1) {
+        const shape = shapes[highlightedShapeIndex];
+        p.noFill();
+        p.stroke(255, 0, 0);
+        p.strokeWeight(4);
+        p.ellipse(shape.x, shape.y, shape.d + 20);
+      }
+
       p.pop();
     } else {
       drawAxis(p);
@@ -104,6 +115,21 @@ let sketch1 = new p5((p) => {
       
       if (cameraFixed) {
         p.drawLabels();
+      }
+
+      // ハイライトの描画（3Dモード）
+      if (highlightedShapeIndex !== -1) {
+        const shape = shapes[highlightedShapeIndex];
+        p.push();
+        p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+        p.noFill();
+        p.stroke(255, 0, 0);
+        p.strokeWeight(4);
+        
+        // ellipseを使用して円を描画
+        p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
+        
+        p.pop();
       }
     }
   }
@@ -468,6 +494,15 @@ let sketch1 = new p5((p) => {
       li.addEventListener('dragstart', p.dragStart);
       li.addEventListener('dragover', p.dragOver);
       li.addEventListener('drop', p.drop);
+
+      // マウスオーバー時のハイライト
+      li.addEventListener('mouseover', () => {
+        highlightedShapeIndex = index;
+      });
+      li.addEventListener('mouseout', () => {
+          highlightedShapeIndex = -1;
+      });
+
       layerList.appendChild(li);
     });
   }
@@ -475,6 +510,11 @@ let sketch1 = new p5((p) => {
   p.dragStart = function (e) {
     e.dataTransfer.setData('text/plain', e.target.textContent);
     e.target.classList.add('dragging');
+
+    // 図形のハイライトを消す
+    if (highlightedShapeIndex) {
+      highlightedShapeIndex = -1;
+    }
   }
 
   p.dragOver = function (e) {
@@ -482,6 +522,12 @@ let sketch1 = new p5((p) => {
     const draggingElement = document.querySelector('.dragging');
     if (draggingElement && e.target !== draggingElement) {
       e.target.classList.add('drag-over');
+
+      // ドラッグオーバー時のハイライト
+      if (!draggingElement){
+        const index = Array.from(layerList.children).indexOf(e.target.closest('li'));
+        highlightedShapeIndex = index;
+      }
     }
   }
 
