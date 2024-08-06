@@ -91,19 +91,22 @@ main {
 }
 
 #canvas-container {
-  position: absolute;
-  top: 200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 800px;
+  position: absolute; /* 絶対位置指定に変更 */
+  left: 0;
+  right: 0;
+  top: 200px; /* ウィンドウ上端からの固定距離 */
+  display: flex;
   justify-content: center;
   align-items: center;
+}
+
+#canvas {
 }
 
 #layer-menu {
   position: absolute;
   left: 10px;
-  top: 10px;
+  top: 0px;
   z-index: 1000;
 }
 
@@ -219,7 +222,7 @@ h1 {
   font-size: 24px;
 }
 
-#canvas-container2 {
+#canvas2 {
   /* キャンバスコンテナのスタイル */
   width: 800px;
   height: 800px;

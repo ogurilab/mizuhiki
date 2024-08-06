@@ -49,7 +49,7 @@ let sketch1 = new p5((p) => {
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
-    canvas.parent('canvas-container');
+    canvas.parent('canvas');
     
     document.getElementById('add-ume-button').addEventListener('click', () => p.showSizeSelector('ume'));
     document.getElementById('add-awaji-button').addEventListener('click', () => p.showSizeSelector('awaji'));
@@ -257,7 +257,7 @@ let sketch1 = new p5((p) => {
       mode2D = false;
       canvas.remove();
       canvas = p.createCanvas(800, 800, p.WEBGL);
-      canvas.parent('canvas-container');
+      canvas.parent('canvas');
       
       document.getElementById('add-button-container').classList.add('hidden');
       document.getElementById('color-selector').classList.remove('hidden');
@@ -287,7 +287,7 @@ let sketch1 = new p5((p) => {
       mode2D = true;
       canvas.remove();
       canvas = p.createCanvas(800, 800);
-      canvas.parent('canvas-container');
+      canvas.parent('canvas');
       
       document.getElementById('add-button-container').classList.remove('hidden');
       document.getElementById('color-selector').classList.add('hidden');
@@ -748,7 +748,7 @@ let sketch1 = new p5((p) => {
       zOffset += 8;
     });
   }
-}, 'canvas-container');
+}, 'canvas');
 
 let additionalCanvas;
 
@@ -758,7 +758,7 @@ function initializeCompleteView() {
 
   // キャンバスコンテナを追加
   const canvasContainer = document.createElement('div');
-  canvasContainer.id = 'canvas-container2';
+  canvasContainer.id = 'canvas2';
   container.appendChild(canvasContainer);
 
   // 既存のスケッチを削除
@@ -770,7 +770,7 @@ function initializeCompleteView() {
   sketch2 = new p5((p) => {
     p.setup = function() {
       let canvas = p.createCanvas(800, 800, p.WEBGL);
-      canvas.parent('canvas-container2');
+      canvas.parent('canvas2');
       definePoints();
     }
 
@@ -783,7 +783,7 @@ function initializeCompleteView() {
         drawShape(p, compShapes[i], i);
       }
     }
-  }, 'canvas-container2');
+  }, 'canvas2');
 
   // 水平線を追加
   const hr = document.createElement('hr');
@@ -791,7 +791,7 @@ function initializeCompleteView() {
 
   // 追加のキャンバスコンテナを追加
   const additionalCanvasContainer = document.createElement('div');
-  additionalCanvasContainer.id = 'additional-canvas-container';
+  additionalCanvasContainer.id = 'additional-canvas';
   container.appendChild(additionalCanvasContainer);
 
   // 既存の追加キャンバスを削除
@@ -804,7 +804,7 @@ function initializeCompleteView() {
   additionalCanvas = new p5((p) => {
     p.setup = function() {
       let canvas = p.createCanvas(400, 400);
-      canvas.parent('additional-canvas-container');
+      canvas.parent('additional-canvas');
     }
 
     p.draw = function() {
@@ -813,7 +813,7 @@ function initializeCompleteView() {
       p.text('追加のキャンバス', 10, 30);
       // ここに追加のキャンバスの描画コードを記述
     }
-  }, 'additional-canvas-container');*/
+  }, 'additional-canvas');*/
 
   // 追加のテキストコンテンツ
   const additionalContent = document.createElement('h1');
@@ -837,7 +837,7 @@ function initializeTab2() {
     sketch2 = new p5((p) => {
       p.setup = function() {
         let canvas = p.createCanvas(800, 800, p.WEBGL);
-        canvas.parent('canvas-container2');
+        canvas.parent('canvas2');
         definePoints();
       }
 
@@ -850,7 +850,7 @@ function initializeTab2() {
           drawShape(p, compShapes[i], i);
         }
       }
-    }, 'canvas-container2');
+    }, 'canvas2');
   }, 0);
 }
 */
