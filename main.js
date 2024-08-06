@@ -1,4 +1,5 @@
-let shapes = [];
+//let shapes = [];
+let layers = [];
 //let mode2D = true;
 let ume_points = [], awaji_points = [];
 //let currentType = null;
@@ -15,9 +16,6 @@ let layerList;
 //let mode2D_f = 0;
 let compShapes = [];
 let sketch2;
-
-
-//let completeCanvas;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
@@ -46,6 +44,7 @@ let sketch1 = new p5((p) => {
   let mode2D_f = 0;
   let pg;
   let highlightedShapeIndex = -1;
+  let highlightedLayerIndex = -1;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -79,22 +78,30 @@ let sketch1 = new p5((p) => {
       if (mode2D_f == 1) {
         p.translate(-p.width/2, -p.height/2);
       }
-      for (let i=0; i<shapes.length; i++) {
-        if (shapes[i].type === 'awaji') {
-          p.fill(0, 255, 0, 100);
-          p.drawInvertedTriangle(shapes[i].x, shapes[i].y, shapes[i].d);
-        } else if (shapes[i].type === 'ume') {
-          p.fill(255, 0, 0, 100);
-          p.ellipse(shapes[i].x, shapes[i].y, shapes[i].d);
-        }
-      }
+      layers.forEach(layer => {
+        layer.shapes.forEach(shape => {
+          // 各図形の描画
+          if (shape.type === 'awaji') {
+            p.fill(0, 255, 0, 100);
+            p.drawInvertedTriangle(shape.x, shape.y, shape.d);
+          } else if (shape.type === 'ume') {
+            p.fill(255, 0, 0, 100);
+            p.ellipse(shape.x, shape.y, shape.d);
+          }
+        });
+      });
       // ハイライトの描画
-      if (highlightedShapeIndex !== -1) {
-        const shape = shapes[highlightedShapeIndex];
-        p.noFill();
-        p.stroke(255, 0, 0);
-        p.strokeWeight(4);
-        p.ellipse(shape.x, shape.y, shape.d + 20);
+      if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
+        const layer = layers[highlightedLayerIndex];
+        try {
+          const shape = layer.shapes[highlightedShapeIndex];
+          p.noFill();
+          p.stroke(255, 0, 0);
+          p.strokeWeight(4);
+          p.ellipse(shape.x, shape.y, shape.d + 20);
+        } catch (error) { // レイヤー変換の一瞬エラーが出るため
+          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+        }
       }
       p.pop();
     } else {
@@ -107,26 +114,33 @@ let sketch1 = new p5((p) => {
         p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       }
       
-      for (let i = shapes.length - 1; i >= 0; i--) {
-        drawShape(p, shapes[i], i);
-      }
+      layers.forEach(layer => {
+        layer.shapes.forEach((shape, index) => {
+          drawShape(p, shape, index);
+        });
+      });
       
       if (cameraFixed) {
         p.drawLabels();
       }
       
       // ハイライトの描画
-      if (highlightedShapeIndex !== -1) {
-        const shape = shapes[highlightedShapeIndex];
-        p.push();
-        p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
-        p.noFill();
-        p.stroke(255, 0, 0);
-        p.strokeWeight(4);
-        
-        // ellipseを使用して円を描画
-        p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
-        p.pop();
+      if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
+        const layer = layers[highlightedLayerIndex];
+        try {
+          const shape = layer.shapes[highlightedShapeIndex];
+          p.push();
+          p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+          p.noFill();
+          p.stroke(255, 0, 0);
+          p.strokeWeight(4);
+          
+          // ellipseを使用して円を描画
+          p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
+          p.pop();
+        } catch (error) { // レイヤー変換の一瞬エラーが出るため
+          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+        }
       }
     }
   }
@@ -141,26 +155,28 @@ let sketch1 = new p5((p) => {
     pg.fill(0);  // 黒色のテキスト
     pg.noStroke();
     
-    for (let i = 0; i < shapes.length; i++) {
-      let shape = shapes[i];
-      let x = shape.x;
-      let y = shape.y;
-      let z = shape.zIndex || 0;  // zIndexがない場合は0を使用
-      
-      // ラベルのテキスト
-      let labelText = `${i}`;
-      
-      // ラベルの位置（形状の右上に配置）
-      let labelX = x + (shape.d / 2);
-      let labelY = y - (shape.d / 2);
-      
-      // zに応じてテキストサイズを調整
-      let adjustedSize = 30 / (1 + p.abs(z) * 0.01);
-      pg.textSize(adjustedSize);
-      
-      // ラベルを描画
-      pg.text(labelText, labelX, labelY);
-    }
+    for (let layer of layers) {
+      for (let i = 0; i < layer.shapes.length; i++) {
+        let shape = layer.shapes[i];
+        let x = shape.x;
+        let y = shape.y;
+        let z = shape.zIndex || 0;  // zIndexがない場合は0を使用
+        
+        // ラベルのテキスト
+        let labelText = `${i}`;
+        
+        // ラベルの位置（形状の右上に配置）
+        let labelX = x + (shape.d / 2);
+        let labelY = y - (shape.d / 2);
+        
+        // zに応じてテキストサイズを調整
+        let adjustedSize = 30 / (1 + p.abs(z) * 0.01);
+        pg.textSize(adjustedSize);
+        
+        // ラベルを描画
+        pg.text(labelText, labelX, labelY);
+      }
+    }    
     pg.pop();
     
     // オフスクリーンバッファをメインキャンバスに描画
@@ -197,15 +213,19 @@ let sketch1 = new p5((p) => {
   //選択されたサイズの図形を作成してshapesに格納
   p.selectSize = function (size) {
     let shapeDiameter = size * 50; // 1cm = 50px と仮定
-    shapes.push({
+    let newShape = {
       type: currentType,
       x: p.width/2,
       y: p.height/2,
       d: shapeDiameter,
       scale: shapeDiameter / 300,
       ...p.getCurveParameters(currentType, shapeDiameter)
-    });
+    };
     
+    // 新しいレイヤーを作成し、そこに新しい図形を追加
+    let newLayer = {name: `Layer ${layers.length + 1}`, shapes: [newShape]};
+    layers.push(newLayer);
+
     //サイズを選択したらボタンを隠す
     document.getElementById('ume-size-selector').classList.add('hidden');
     document.getElementById('awaji-size-selector').classList.add('hidden');
@@ -215,7 +235,7 @@ let sketch1 = new p5((p) => {
 
   //2D->3Dへの変換
   p.convert = function () {
-    if (mode2D && shapes.length > 0) {
+    if (mode2D && layers.length > 0) {
       mode2D = false;
       canvas.remove();
       canvas = p.createCanvas(800, 800, p.WEBGL);
@@ -230,14 +250,17 @@ let sketch1 = new p5((p) => {
       fixFrontButton.mousePressed(p.toggleFixedFrontView);
 
       // zIndexを設定
-      for (let i = 0; i < shapes.length; i++) {
-        shapes[i].zIndex = i * 8;  // 8ずつマイナス方向にずらす
-        //console.log(shapes[i].x, shapes[i].y);
-      }
+      let zOffset = 0;
+      layers.forEach(layer => {
+        layer.shapes.forEach(shape => {
+          shape.zIndex = zOffset;
+        });
+          zOffset += 8;
+      });
 
       // compShapesを更新
-      compShapes = JSON.parse(JSON.stringify(shapes));
-      
+      compShapes = layers.flatMap(layer => layer.shapes);
+        
       // sketch2を再初期化
       initializeCompleteView();
     }else if(!mode2D){
@@ -256,16 +279,18 @@ let sketch1 = new p5((p) => {
       }
     
       // 座標を2Dモードに戻す
-      for (let shape of shapes) {
-        delete shape.zIndex;
-      }
+      layers.forEach(layer => {
+        layer.shapes.forEach(shape => {
+          delete shape.zIndex;
+        });
+      });
     
       if(mode2D_f == 0){
         mode2D_f = 1;
       }
       //translate(-width/2, -height/2);
     }
-  }
+    }
 
 
   p.getCurveParameters = function (type, circleDiameter) {
@@ -444,26 +469,30 @@ let sketch1 = new p5((p) => {
 
   p.mousePressed = function () {
     if (mode2D) {
-      for (let shape of shapes) {
-        if (p.dist(p.mouseX, p.mouseY, shape.x, shape.y) < shape.d / 2) {
-          selectedShape = shape;
-          break;
+      for (let i = 0; i < layers.length; i++) {
+        for (let j = 0; j < layers[i].shapes.length; j++) {
+          let shape = layers[i].shapes[j];
+          if (p.dist(p.mouseX, p.mouseY, shape.x, shape.y) < shape.d / 2) {
+            selectedShape = shape;
+            selectedLayerIndex = i;
+            break;
+          }
         }
+        if (selectedShape) break;
       }
     }
   }
-
+  
   p.mouseDragged = function () {
-    //console.log(p.mouseX, p.mouseY);
     if (mode2D && selectedShape) {
       selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
       selectedShape.y = p.constrain(p.mouseY, selectedShape.d/2, p.height - selectedShape.d/2);
-      //console.log(selectedShape.x ,selectedShape.y);
     }
   }
-
+  
   p.mouseReleased = function () {
     selectedShape = null;
+    selectedLayerIndex = -1;
   }
 
   p.toggleLayerMenu = function () {
@@ -472,94 +501,228 @@ let sketch1 = new p5((p) => {
 
   p.updateLayerList = function () {
     layerList.innerHTML = '';
-    shapes.forEach((shape, index) => {
-      const li = document.createElement('li');
-      
-      // ドラッグハンドルの作成
-      const dragHandle = document.createElement('span');
-      dragHandle.className = 'drag-handle';
-      dragHandle.innerHTML = '&#9776;'; // Unicode for vertical ellipsis (⋮)
-      
-      // テキスト用のspan要素
-      const textSpan = document.createElement('span');
-      textSpan.textContent = `${shape.type} ${index}`;
-      
-      li.appendChild(dragHandle);
-      li.appendChild(textSpan);
-      
-      li.draggable = true;
-      li.addEventListener('dragstart', p.dragStart);
-      li.addEventListener('dragover', p.dragOver);
-      li.addEventListener('drop', p.drop);
 
-      // マウスオーバー時のハイライト
-      li.addEventListener('mouseover', () => {
-        // リスト内の現在のインデックスを取得
-        const dynamicIndex = Array.from(layerList.children).indexOf(li);
-        highlightedShapeIndex = dynamicIndex;
-      });
-      li.addEventListener('mouseout', () => {
+    layers.forEach((layer, layerIndex) => {
+      const layerItem = document.createElement('li');
+      layerItem.className = 'layer-item';
+      layerItem.draggable = true;
+      layerItem.innerHTML = `
+        <span class="layer-name">${layer.name}</span>
+        <ul class="shape-list"></ul>
+      `;
+
+      const shapeList = layerItem.querySelector('.shape-list');
+
+      layer.shapes.forEach((shape, shapeIndex) => {
+        const shapeItem = document.createElement('li');
+        shapeItem.className = 'shape-item';
+        shapeItem.draggable = true;
+        shapeItem.innerHTML = `
+          <span class="drag-handle">&#9776;</span>
+          <span>${shape.type} ${shapeIndex}</span>
+        `;
+
+        shapeItem.addEventListener('dragstart', (e) => p.dragStart(e, 'shape', layerIndex, shapeIndex));
+        shapeItem.addEventListener('dragover', p.dragOver);
+        shapeItem.addEventListener('drop', (e) => p.drop(e, 'shape'));
+
+        // マウスオーバー時のハイライト
+        shapeItem.addEventListener('mouseover', () => {
+          const shapeItems = shapeList.querySelectorAll('.shape-item');
+          const dynamicIndex = Array.from(shapeItems).indexOf(shapeItem);
+          highlightedShapeIndex = dynamicIndex;
+
+          // 所属レイヤーを見つける
+          const layerIndexOfShape = layers.findIndex(layer => layer.shapes.includes(shape));
+          highlightedLayerIndex = layerIndexOfShape;
+          //p.redraw();
+        });
+
+        shapeItem.addEventListener('mouseout', () => {
           highlightedShapeIndex = -1;
+          highlightedLayerIndex = -1;
+          //p.redraw();
+        });
+
+        shapeList.appendChild(shapeItem);
       });
 
-      layerList.appendChild(li);
+      layerItem.addEventListener('dragstart', (e) => p.dragStart(e, 'layer', layerIndex));
+      layerItem.addEventListener('dragover', p.dragOver);
+      layerItem.addEventListener('drop', (e) => p.drop(e, 'layer'));
+
+      layerList.appendChild(layerItem);
     });
   }
 
-  p.dragStart = function (e) {
-    e.dataTransfer.setData('text/plain', e.target.textContent);
+  p.dragStart = function (e, type, layerIndex, shapeIndex) {
+    e.stopPropagation(); // イベントの伝播を停止
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type, layerIndex, shapeIndex }));
     e.target.classList.add('dragging');
-
-    // 図形のハイライトを消す
-    if (highlightedShapeIndex) {
-      highlightedShapeIndex = -1;
-    }
   }
 
   p.dragOver = function (e) {
     e.preventDefault();
-    const draggingElement = document.querySelector('.dragging');
-    if (draggingElement && e.target !== draggingElement) {
-      e.target.classList.add('drag-over');
-    }
+    e.stopPropagation(); // イベントの伝播を停止
+    e.target.classList.add('drag-over');
   }
 
   p.drop = function (e) {
-    e.preventDefault(); // デフォルトのドロップ動作を防止
-    const data = e.dataTransfer.getData('text'); // ドラッグ開始時に設定されたデータを取得
-    const draggedElement = Array.from(layerList.children).find(el => el.textContent.includes(data)); // ドラッグされた要素を特定
-    const dropTarget = e.target.closest('li'); // ドロップ先の最も近いli要素を取得
+    e.preventDefault();
+    e.stopPropagation(); // イベントの伝播を停止
 
-    if (draggedElement !== dropTarget) { // ドラッグ元とドロップ先が異なる場合のみ処理を行う
-        const draggedIndex = Array.from(layerList.children).indexOf(draggedElement); // ドラッグされた要素のインデックスを取得
-        const dropIndex = Array.from(layerList.children).indexOf(dropTarget); // ドロップ先要素のインデックスを取得
+    const data = JSON.parse(e.dataTransfer.getData('text'));
+    const { type, layerIndex, shapeIndex } = data;
 
-        // shapes配列の順序を更新
-        const [removedShape] = shapes.splice(draggedIndex, 1); // ドラッグされた要素をshapes配列から削除し、その要素を取得
-        shapes.splice(dropIndex, 0, removedShape); // 削除した要素をドロップ先の位置に挿入
+    let dropTarget = e.target;
+    let dropType = 'layerList'; // デフォルトはレイヤーリスト全体
 
-        // innerCurvesDataの順序も同様に更新
-        const [removedInnerCurveData] = innerCurvesData.splice(draggedIndex, 1);
-        innerCurvesData.splice(dropIndex, 0, removedInnerCurveData);
-
-        // DOMの順序を更新
-        if (dropIndex < draggedIndex) {
-            layerList.insertBefore(draggedElement, dropTarget); // ドロップ先が上の場合、その位置に挿入
-        } else {
-            layerList.insertBefore(draggedElement, dropTarget.nextSibling); // ドロップ先が下の場合、その次の位置に挿入
-        }
-
-      // zIndexを更新
-      p.updateShapeZIndex();
+    if (dropTarget.closest('.shape-item')) {
+      dropType = 'shape';
+      dropTarget = dropTarget.closest('.shape-item');
+    } else if (dropTarget.closest('.layer-item')) {
+      dropType = 'layer';
+      dropTarget = dropTarget.closest('.layer-item');
     }
 
-    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-    document.querySelector('.dragging').classList.remove('dragging');
+    dropTarget.classList.remove('drag-over');
+    
+    const draggingElement = document.querySelector('.dragging');
+    if (draggingElement) {
+      draggingElement.classList.remove('dragging');
+    }
+
+    if (type === 'layer' && dropType === 'layer') {
+      const dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
+
+      if (layerIndex !== dropLayerIndex) {
+        const [draggedLayer] = layers.splice(layerIndex, 1);
+        layers.splice(dropLayerIndex, 0, draggedLayer);
+      }
+    } else if (type === 'shape') {
+      let dropLayerIndex;
+      let dropShapeIndex = -1;
+
+      if (dropType === 'layer') {
+        dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
+      } else if (dropType === 'shape') {
+        const dropLayerItem = dropTarget.closest('.layer-item');
+        dropLayerIndex = Array.from(layerList.children).indexOf(dropLayerItem);
+        const dropShapeList = dropLayerItem.querySelector('.shape-list');
+        dropShapeIndex = Array.from(dropShapeList.children).indexOf(dropTarget);
+      } else if (dropType === 'layerList') {
+        // 新しいレイヤーを作成
+        dropLayerIndex = layers.length;
+        layers.push({name: `Layer ${layers.length + 1}`, shapes: []});
+      }
+
+      if (dropLayerIndex !== undefined) {
+        const [draggedShape] = layers[layerIndex].shapes.splice(shapeIndex, 1);
+
+        if (dropShapeIndex === -1) {
+            layers[dropLayerIndex].shapes.push(draggedShape);
+        } else {
+            layers[dropLayerIndex].shapes.splice(dropShapeIndex, 0, draggedShape);
+        }
+      }
+    }
+
+    p.updateLayerList();
+    p.updateShapeZIndex();
   }
+/* DOMの順序の更新をの順序の更新を個別に行い、最後のupdateLayerListの呼び出しをなくしている
+    現状、以下のやり方だとエラー吐いてる
+  p.drop = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const data = JSON.parse(e.dataTransfer.getData('text'));
+    const { type, layerIndex, shapeIndex } = data;
+
+    let dropTarget = e.target;
+    let dropType = 'layerList';
+
+    if (dropTarget.closest('.shape-item')) {
+        dropType = 'shape';
+        dropTarget = dropTarget.closest('.shape-item');
+    } else if (dropTarget.closest('.layer-item')) {
+        dropType = 'layer';
+        dropTarget = dropTarget.closest('.layer-item');
+    }
+
+    dropTarget.classList.remove('drag-over');
+    
+    const draggingElement = document.querySelector('.dragging');
+    if (draggingElement) {
+        draggingElement.classList.remove('dragging');
+    }
+
+    if (type === 'layer' && dropType === 'layer') {
+        const dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
+
+        if (layerIndex !== dropLayerIndex) {
+            const [draggedLayer] = layers.splice(layerIndex, 1);
+            layers.splice(dropLayerIndex, 0, draggedLayer);
+            
+            // DOM の順序を更新
+            if (dropLayerIndex < layerIndex) {
+                layerList.insertBefore(draggingElement, dropTarget);
+            } else {
+                layerList.insertBefore(draggingElement, dropTarget.nextSibling);
+            }
+        }
+    } else if (type === 'shape') {
+        let dropLayerIndex;
+        let dropShapeIndex = -1;
+
+        if (dropType === 'layer') {
+            dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
+        } else if (dropType === 'shape') {
+            const dropLayerItem = dropTarget.closest('.layer-item');
+            dropLayerIndex = Array.from(layerList.children).indexOf(dropLayerItem);
+            const dropShapeList = dropLayerItem.querySelector('.shape-list');
+            dropShapeIndex = Array.from(dropShapeList.children).indexOf(dropTarget);
+        } else if (dropType === 'layerList') {
+            // 新しいレイヤーを作成
+            dropLayerIndex = layers.length;
+            const newLayer = {name: `Layer ${layers.length + 1}`, shapes: []};
+            layers.push(newLayer);
+            
+            // 新しいレイヤーの DOM 要素を作成
+            const newLayerItem = document.createElement('li');
+            newLayerItem.className = 'layer-item';
+            newLayerItem.innerHTML = `
+                <span class="layer-name">${newLayer.name}</span>
+                <ul class="shape-list"></ul>
+            `;
+            layerList.appendChild(newLayerItem);
+            dropTarget = newLayerItem.querySelector('.shape-list');
+        }
+
+        if (dropLayerIndex !== undefined) {
+            const [draggedShape] = layers[layerIndex].shapes.splice(shapeIndex, 1);
+
+            if (dropShapeIndex === -1) {
+                layers[dropLayerIndex].shapes.push(draggedShape);
+                dropTarget.querySelector('.shape-list').appendChild(draggingElement);
+            } else {
+                layers[dropLayerIndex].shapes.splice(dropShapeIndex, 0, draggedShape);
+                dropTarget.parentNode.insertBefore(draggingElement, dropTarget.nextSibling);
+            }
+        }
+    }
+
+    p.updateShapeZIndex();
+  }
+  */
 
   p.updateShapeZIndex = function () {
-    shapes.forEach((shape, index) => {
-      shape.zIndex = (shapes.length - 1 - index) * -8;
+    let zOffset = 0;
+    layers.forEach(layer => {
+      layer.shapes.forEach(shape => {
+        shape.zIndex = zOffset;
+      });
+      zOffset += 8;
     });
   }
 }, 'canvas-container');
