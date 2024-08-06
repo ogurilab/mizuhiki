@@ -231,6 +231,16 @@ let sketch1 = new p5((p) => {
     document.getElementById('awaji-size-selector').classList.add('hidden');
 
     p.updateLayerList();
+    // zIndexを設定
+    let zOffset = 0;
+    layers.forEach(layer => {
+      layer.shapes.forEach(shape => {
+        shape.zIndex = zOffset;
+      });
+        zOffset += 8;
+    });
+    // compShapesを更新
+    compShapes = layers.flatMap(layer => layer.shapes);
   }
 
   //2D->3Dへの変換
@@ -250,19 +260,20 @@ let sketch1 = new p5((p) => {
       fixFrontButton.mousePressed(p.toggleFixedFrontView);
 
       // zIndexを設定
+      /*
       let zOffset = 0;
       layers.forEach(layer => {
         layer.shapes.forEach(shape => {
           shape.zIndex = zOffset;
         });
           zOffset += 8;
-      });
+      });*/
 
       // compShapesを更新
-      compShapes = layers.flatMap(layer => layer.shapes);
+      //compShapes = layers.flatMap(layer => layer.shapes);
         
       // sketch2を再初期化
-      initializeCompleteView();
+      //initializeCompleteView();
     }else if(!mode2D){
       p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       mode2D = true;
@@ -279,11 +290,12 @@ let sketch1 = new p5((p) => {
       }
     
       // 座標を2Dモードに戻す
+      /*
       layers.forEach(layer => {
         layer.shapes.forEach(shape => {
           delete shape.zIndex;
         });
-      });
+      });*/
     
       if(mode2D_f == 0){
         mode2D_f = 1;
@@ -468,7 +480,7 @@ let sketch1 = new p5((p) => {
   }
 
   p.mousePressed = function () {
-    if (mode2D) {
+    if (mode2D && document.getElementById('tab1').checked) {
       for (let i = 0; i < layers.length; i++) {
         for (let j = 0; j < layers[i].shapes.length; j++) {
           let shape = layers[i].shapes[j];
@@ -484,7 +496,7 @@ let sketch1 = new p5((p) => {
   }
   
   p.mouseDragged = function () {
-    if (mode2D && selectedShape) {
+    if (mode2D && selectedShape && document.getElementById('tab1').checked) {
       selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
       selectedShape.y = p.constrain(p.mouseY, selectedShape.d/2, p.height - selectedShape.d/2);
     }
@@ -630,6 +642,7 @@ let sketch1 = new p5((p) => {
     p.updateLayerList();
     p.updateShapeZIndex();
   }
+
 /* DOMの順序の更新をの順序の更新を個別に行い、最後のupdateLayerListの呼び出しをなくしている
     現状、以下のやり方だとエラー吐いてる
   p.drop = function (e) {
