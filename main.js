@@ -45,6 +45,7 @@ let sketch1 = new p5((p) => {
   let pg;
   let highlightedShapeIndex = -1;
   let highlightedLayerIndex = -1;
+  let isLayerManipulating = false;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -64,6 +65,13 @@ let sketch1 = new p5((p) => {
     layerList = document.getElementById('layer-list');
     const layerMenuButton = document.getElementById('layer-menu-button');
     layerMenuButton.addEventListener('click', p.toggleLayerMenu);
+    layerList.addEventListener('mousedown', () => {
+      isLayerManipulating = true;
+    });
+  
+    document.addEventListener('mouseup', () => {
+      isLayerManipulating = false;
+    });
 
     // レイヤーリストの初期化
     p.updateLayerList();
@@ -107,9 +115,9 @@ let sketch1 = new p5((p) => {
     } else {
       drawAxis(p);
       
-      if (!cameraFixed) {
+      if (!cameraFixed && !isLayerManipulating) {
         p.orbitControl();
-      } else {
+      } else if (cameraFixed) {
         // カメラを正面に固定
         p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       }
@@ -568,6 +576,7 @@ let sketch1 = new p5((p) => {
   }
 
   p.dragStart = function (e, type, layerIndex, shapeIndex) {
+    isLayerManipulating = true;
     e.stopPropagation(); // イベントの伝播を停止
     e.dataTransfer.setData('text/plain', JSON.stringify({ type, layerIndex, shapeIndex }));
     e.target.classList.add('dragging');
@@ -580,6 +589,7 @@ let sketch1 = new p5((p) => {
   }
 
   p.drop = function (e) {
+    isLayerManipulating = false;
     e.preventDefault();
     e.stopPropagation(); // イベントの伝播を停止
 
