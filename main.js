@@ -1043,35 +1043,42 @@ function definePoints() {
     { x: -60, y: -30, z: 5 },
     { x: -90, y: -90, z: 0 }
   ];
+   
+  renzoku_points = awaji_points.map(point => {
+    return {
+      x: point.x,
+      y: point.y + 70,
+      z: point.z
+    };
+  });
 
   awajiRl_points = [
-    { x: -45, y: -100, z: 5 },
-    { x: 15, y: -145, z: -7 },
-    { x: 70, y: -130, z: 5 },
-    { x: 70, y: -75, z: -10 },
-    { x: 10, y: -65, z: 5 },
-    { x: -40, y: -100, z: -5 },
-    { x: -60, y: -130, z: 5 },
-    { x: -90, y: -190, z: 0 }
+    { x: -45, y: -30, z: 5 },
+    { x: 15, y: -75, z: -7 },
+    { x: 70, y: -60, z: 5 },
+    { x: 70, y: -5, z: -10 },
+    { x: 10, y: 5, z: 5 },
+    { x: -40, y: -20, z: -5 },
+    { x: -60, y: -60, z: 5 },
+    { x: -90, y: -120, z: 0 }
   ]
 
   awajiRr_points = [
-    { x: 90, y: -190, z: 0 },
-    { x: 60, y: -130, z: -5 },
-    { x: 40, y: -100, z: 5 },
-    { x: -10, y: -65, z: -5 },
-    { x: -70, y: -75, z: 10 },
-    { x: -70, y: -130, z: -5 },
-    { x: -15, y: -145, z: 7 },
-    { x: 45, y: -100, z: -5 },
+    { x: 90, y: -120, z: 0 },
+    { x: 60, y: -60, z: -5 },
+    { x: 40, y: -20, z: 5 },
+    { x: -10, y: 5, z: -5 },
+    { x: -70, y: -5, z: 10 },
+    { x: -70, y: -60, z: -5 },
+    { x: -15, y: -75, z: 7 },
+    { x: 45, y: -30, z: -5 },
   ]
 }
 
 function renzokuAwaji(n) {
-  let points = awaji_points;
+  let points = renzoku_points;
   let new_awajiRr = awajiRr_points;
   let new_awajiRl = awajiRl_points;
-
   let yDiff = Math.abs(new_awajiRr[0].y - new_awajiRr[6].y - 60);
   
   for (let i=0; i<n-1; i++){
