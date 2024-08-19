@@ -1,7 +1,7 @@
 //let shapes = [];
 let layers = [];
 //let mode2D = true;
-let ume_points = [], awaji_points = [];
+let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [];
 //let currentType = null;
 let innerCurvesData = [];
 //let selectedCurve = null;
@@ -53,6 +53,7 @@ let sketch1 = new p5((p) => {
     
     document.getElementById('add-ume-button').addEventListener('click', () => p.showSizeSelector('ume'));
     document.getElementById('add-awaji-button').addEventListener('click', () => p.showSizeSelector('awaji'));
+    document.getElementById('add-renzoku-button').addEventListener('click', () => p.showSizeSelector('renzoku'));
     document.getElementById('convert-button').addEventListener('click', p.convert);
     
     p.setupSizeSelectors();
@@ -92,9 +93,14 @@ let sketch1 = new p5((p) => {
           if (shape.type === 'awaji') {
             p.fill(0, 255, 0, 100);
             p.drawInvertedTriangle(shape.x, shape.y, shape.d);
+            //console.log(shape.x, shape.y, shape.d);
           } else if (shape.type === 'ume') {
             p.fill(255, 0, 0, 100);
             p.ellipse(shape.x, shape.y, shape.d);
+          } else if (shape.type === 'renzoku') {
+            p.fill(255, 0, 0, 100);
+            p.drawRenzokuawaji(shape.x, shape.y, shape.l, shape.w);
+            //console.log(shape.x, shape.y, shape.l, shape.w);
           }
         });
       });
@@ -106,7 +112,15 @@ let sketch1 = new p5((p) => {
           p.noFill();
           p.stroke(255, 0, 0);
           p.strokeWeight(4);
-          p.ellipse(shape.x, shape.y, shape.d + 20);
+          if (shape.d){
+            p.ellipse(shape.x, shape.y, shape.d + 20);
+          } else {
+            if (shape.w > shape.l){
+              p.ellipse(shape.x, shape.y, shape.w + 20);
+            } else {
+              p.ellipse(shape.x, shape.y, shape.l + 20);
+            }
+          }
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
           console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
         }
@@ -144,6 +158,15 @@ let sketch1 = new p5((p) => {
           p.strokeWeight(4);
           
           // ellipseを使用して円を描画
+          if (shape.d){
+            p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
+          } else {
+            if (shape.w > shape.l){
+              p.ellipse(0, 0, shape.w * 1.1, shape.w * 1.1);
+            } else {
+              p.ellipse(0, 0, shape.l * 1.1, shape.l * 1.1);
+            }
+          }
           p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
           p.pop();
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
@@ -174,8 +197,14 @@ let sketch1 = new p5((p) => {
         let labelText = `${i}`;
         
         // ラベルの位置（形状の右上に配置）
-        let labelX = x + (shape.d / 2);
-        let labelY = y - (shape.d / 2);
+        let labelX, labelY;
+        if (shape.p) {
+          labelX = x + (shape.d / 2);
+          labelY = y - (shape.d / 2);
+        } else {
+          labelX = x + shape.w / 2;
+          labelY = y - shape.l / 2;
+        }
         
         // zに応じてテキストサイズを調整
         let adjustedSize = 30 / (1 + p.abs(z) * 0.01);
@@ -204,11 +233,21 @@ let sketch1 = new p5((p) => {
     p.pop();
   }
 
+  //連続あわじ結びの描画
+  p.drawRenzokuawaji = function (x, y, l, w) {
+    p.push();
+    //p.translate(x, y);
+    p.rectMode(p.CENTER);
+    p.rect(x, y, w, l);
+    p.pop();
+  }
+
   //選択された図形の種類によってサイズ選択ボタンを表示・非表示にする
   p.showSizeSelector = function (type) {
     currentType = type;
     document.getElementById('ume-size-selector').classList.toggle('hidden', type !== 'ume');
     document.getElementById('awaji-size-selector').classList.toggle('hidden', type !== 'awaji');
+    document.getElementById('renzoku-size-selector').classList.toggle('hidden', type !== 'renzoku');
   }
 
   //サイズオプションにクリックイベントを設定する
@@ -220,15 +259,30 @@ let sketch1 = new p5((p) => {
 
   //選択されたサイズの図形を作成してshapesに格納
   p.selectSize = function (size) {
-    let shapeDiameter = size * 50; // 1cm = 50px と仮定
-    let newShape = {
-      type: currentType,
-      x: p.width/2,
-      y: p.height/2,
-      d: shapeDiameter,
-      scale: shapeDiameter / 300,
-      ...p.getCurveParameters(currentType, shapeDiameter)
-    };
+    let newShape;
+    if (size.includes(' ')) {
+      let shapeLength = size.toString().split(' ')[0] * 50; // 1cm = 50px と仮定
+      let shapeWidth = size.toString().split(' ')[1] * 50; 
+      newShape = {
+        type: currentType,
+        x: p.width/2,
+        y: p.height/2,
+        w: shapeWidth,
+        l: shapeLength,
+        scale: Math.max(shapeLength, shapeWidth) / 500,
+        ...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
+      };
+    } else {
+      let shapeDiameter = size * 50; // 1cm = 50px と仮定
+      newShape = {
+        type: currentType,
+        x: p.width/2,
+        y: p.height/2,
+        d: shapeDiameter,
+        scale: shapeDiameter / 300,
+        ...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      };
+    }
     
     // 新しいレイヤーを作成し、そこに新しい図形を追加
     let newLayer = {name: `Layer ${layers.length + 1}`, shapes: [newShape]};
@@ -237,6 +291,7 @@ let sketch1 = new p5((p) => {
     //サイズを選択したらボタンを隠す
     document.getElementById('ume-size-selector').classList.add('hidden');
     document.getElementById('awaji-size-selector').classList.add('hidden');
+    document.getElementById('renzoku-size-selector').classList.add('hidden');
 
     p.updateLayerList();
     // zIndexを設定
@@ -313,8 +368,13 @@ let sketch1 = new p5((p) => {
     }
 
 
-  p.getCurveParameters = function (type, circleDiameter) {
-    let cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
+  p.getCurveParameters = function (type, circleDiameter, shapeLength, shapeWidth) {
+    let cmSize = circleDiameter / 50;
+    if (circleDiameter != 0) {
+      cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
+    } else {
+      cmSize = shapeLength / 50;
+    }
 
     // デフォルトのパラメータ
     let defaultParams = {
@@ -339,6 +399,12 @@ let sketch1 = new p5((p) => {
         2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
         3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
       },
+      renzoku: {
+        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
+        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
+        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+      },
       // その他のモデルが追加される場合はここに定義
       other: {
         1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
@@ -357,6 +423,7 @@ let sketch1 = new p5((p) => {
     // 該当するタイプとサイズのパラメータを返す
     return params[type][cmSize];
   }
+  
 
   p.setupColorSelector = function () {
     let colorSelector = document.getElementById('color-selector');
@@ -492,10 +559,20 @@ let sketch1 = new p5((p) => {
       for (let i = 0; i < layers.length; i++) {
         for (let j = 0; j < layers[i].shapes.length; j++) {
           let shape = layers[i].shapes[j];
-          if (p.dist(p.mouseX, p.mouseY, shape.x, shape.y) < shape.d / 2) {
+          if (shape.d) {
+            if (p.dist(p.mouseX, p.mouseY, shape.x, shape.y) < shape.d / 2) {
+              selectedShape = shape;
+              selectedLayerIndex = i;
+              break;
+            }
+          } else {
+            if (p.mouseX > shape.x - shape.w / 2 && p.mouseX < shape.x + shape.w / 2 &&
+            p.mouseY > shape.y - shape.l / 2 && p.mouseY < shape.y + shape.l / 2) {
+            
             selectedShape = shape;
             selectedLayerIndex = i;
             break;
+            }
           }
         }
         if (selectedShape) break;
@@ -505,8 +582,13 @@ let sketch1 = new p5((p) => {
   
   p.mouseDragged = function () {
     if (mode2D && selectedShape && document.getElementById('tab1').checked) {
-      selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
-      selectedShape.y = p.constrain(p.mouseY, selectedShape.d/2, p.height - selectedShape.d/2);
+      if (selectedShape.d) {
+        selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
+        selectedShape.y = p.constrain(p.mouseY, selectedShape.d/2, p.height - selectedShape.d/2);
+      } else {
+        selectedShape.x = p.constrain(p.mouseX, selectedShape.w/2, p.width - selectedShape.w/2);
+        selectedShape.y = p.constrain(p.mouseY, selectedShape.l/2, p.height - selectedShape.l/2);
+      }
     }
   }
   
@@ -877,13 +959,14 @@ function drawShape(p, shape, shapeIndex) {
     points = awaji_points;
   } else if (shape.type === 'ume') {
     points = ume_points;
+  } else if (shape.type === 'renzoku') {
+    points = renzokuAwaji(3);//何連続か
   }
   
   let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
   
   p.noFill();
   p.strokeWeight(shape.innerCurveWeight);
-  
   let shapeInnerCurves = [];
   for (let i = 0; i < innerCurves.length; i++) {
     let color;
@@ -952,7 +1035,7 @@ function definePoints() {
     { x: 30, y: 65, z: 8 },
     { x: -30, y: 65, z: -8 },
     { x: -45, y: 0, z: 5 },
-    { x: 15, y: -45, z: -7 },
+    { x: 15, y: -45, z: -7 },//
     { x: 70, y: -30, z: 5 },
     { x: 70, y: 25, z: -10 },
     { x: 10, y: 45, z: 5 },
@@ -960,6 +1043,52 @@ function definePoints() {
     { x: -60, y: -30, z: 5 },
     { x: -90, y: -90, z: 0 }
   ];
+
+  awajiRl_points = [
+    { x: -45, y: -100, z: 5 },
+    { x: 15, y: -145, z: -7 },
+    { x: 70, y: -130, z: 5 },
+    { x: 70, y: -75, z: -10 },
+    { x: 10, y: -65, z: 5 },
+    { x: -40, y: -100, z: -5 },
+    { x: -60, y: -130, z: 5 },
+    { x: -90, y: -190, z: 0 }
+  ]
+
+  awajiRr_points = [
+    { x: 90, y: -190, z: 0 },
+    { x: 60, y: -130, z: -5 },
+    { x: 40, y: -100, z: 5 },
+    { x: -10, y: -65, z: -5 },
+    { x: -70, y: -75, z: 10 },
+    { x: -70, y: -130, z: -5 },
+    { x: -15, y: -145, z: 7 },
+    { x: 45, y: -100, z: -5 },
+  ]
+}
+
+function renzokuAwaji(n) {
+  let points = awaji_points;
+  let new_awajiRr = awajiRr_points;
+  let new_awajiRl = awajiRl_points;
+
+  let yDiff = Math.abs(new_awajiRr[0].y - new_awajiRr[6].y - 60);
+  
+  for (let i=0; i<n-1; i++){
+    
+    points = new_awajiRr.concat(points.slice(1));
+    points = points.slice(0, -1).concat(new_awajiRl);
+    
+    // 新しい配列を作成し、y 座標を差分だけ小さくする
+    new_awajiRr = new_awajiRr.map(point => {
+      return { x: point.x, y: point.y - yDiff, z: point.z};
+    });
+    new_awajiRl = new_awajiRl.map(point => {
+      return { x: point.x, y: point.y - yDiff, z: point.z};
+    });
+    
+  }
+  return points;
 }
 
 function drawCurveFromPoints(p, pts) {
@@ -984,7 +1113,6 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
       innerCurves.push(createOffsetCurve(p, points, offset));
     }
   }
-  
   return innerCurves;
 }
 

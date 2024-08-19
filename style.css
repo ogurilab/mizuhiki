@@ -22,7 +22,7 @@ main {
   display: none;
 }
 
-.circle-button, .triangle-button {
+.circle-button, .triangle-button, .rectangle-button {
   width: 30px;
   height: 30px;
   border: none;
@@ -39,6 +39,12 @@ main {
   background-color: transparent;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,85 0,0 100,0" fill="black"/></svg>');
   background-size: cover;
+}
+
+.rectangle-button {
+  width        : 40px;
+  height       : 30px;
+  background: black;
 }
 
 #convert-button {
