@@ -146,7 +146,7 @@ let sketch1 = new p5((p) => {
       
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
-            drawShape(p, shape, layerIndex, index);
+            drawShape(p, shape, layerIndex, index, 0);
         });
       });    
       
@@ -902,7 +902,7 @@ function initializeCompleteView() {
       let indexCounter = 0;
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, shapeIndex) => {
-          drawShape(p, shape, layerIndex, shapeIndex);
+          drawShape(p, shape, layerIndex, shapeIndex, 0);
           indexCounter++;
         });
       });
@@ -915,6 +915,7 @@ function initializeCompleteView() {
   container.appendChild(hr);
 
   // 追加のキャンバスコンテナを追加
+  /*
   const additionalCanvasContainer = document.createElement('div');
   additionalCanvasContainer.id = 'additional-canvas';
   container.appendChild(additionalCanvasContainer);
@@ -922,7 +923,7 @@ function initializeCompleteView() {
   // 既存の追加キャンバスを削除
   if (additionalCanvas) {
     additionalCanvas.remove();
-  }
+  }*/
 
   // 追加のキャンバスを初期化
   /*
@@ -943,7 +944,39 @@ function initializeCompleteView() {
   // 追加のテキストコンテンツ
   const additionalContent = document.createElement('h1');
   additionalContent.textContent = 'パーツ';
-  container.appendChild(additionalContent);
+  container.appendChild(additionalContent);// 追加のキャンバスコンテナを作成
+  const additionalCanvasContainer = document.createElement('div');
+  additionalCanvasContainer.id = 'additional-canvas-container';
+  container.appendChild(additionalCanvasContainer);
+  
+  // 既存のキャンバスがあれば削除
+  document.querySelectorAll('#additional-canvas-container canvas').forEach(canvas => {
+    canvas.remove();
+  });
+  
+  // 各レイヤーごとに新しいキャンバスを作成
+  layers.forEach((layer, layerIndex) => {
+    layer.shapes.forEach((shape, shapeIndex) => {
+      // キャンバス要素を作成
+      const canvasWrapper = document.createElement('div');
+      canvasWrapper.className = 'canvas-wrapper';
+      additionalCanvasContainer.appendChild(canvasWrapper);
+      
+      // 新しいp5インスタンスを作成して個々のキャンバスに3Dモデルを描画
+      new p5((p) => {
+        p.setup = function() {
+          let canvas = p.createCanvas(250, 250, p.WEBGL);
+          canvas.parent(canvasWrapper);
+        }
+  
+        p.draw = function() {
+          p.background(250);
+          p.orbitControl();
+          drawShape(p, shape, layerIndex, shapeIndex, -1);  // 個別の形状を描画
+        }
+      }, canvasWrapper);
+    });
+  });
 }
 
 // タブ切り替え時にinitializeCompleteViewを呼び出す
@@ -991,9 +1024,13 @@ function drawAxis(p) {
   p.line(0, 0, -400, 0, 0, 400);
 }
 
-function drawShape(p, shape, layerIndex,shapeIndex) {
+function drawShape(p, shape, layerIndex,shapeIndex, f) {
   p.push();
-  p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+  if (f == -1) {
+    p.translate(30, 20, 0);
+  } else {
+    p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+  }
   let scaleValue = shape.scale * 1.62;
   p.scale(scaleValue);
   //console.log(shape.x, shape.y); 
