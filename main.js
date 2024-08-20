@@ -19,6 +19,7 @@ let sketch2;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
+/*
 let innerCurveColors = [
   { r: 201, g: 23, b: 30 },
   { r: 187, g: 188, b: 222 },
@@ -26,8 +27,15 @@ let innerCurveColors = [
   { r: 187, g: 188, b: 222 },
   { r: 201, g: 23, b: 30 },
   { r: 187, g: 188, b: 222 },
-];
-
+];*/
+let innerCurveColors = [
+  { r: 165, g: 42, b: 42 },
+  { r: 165, g: 42, b: 42 },
+  { r: 165, g: 42, b: 42 },
+  { r: 165, g: 42, b: 42 },
+  { r: 165, g: 42, b: 42 },
+  { r: 165, g: 42, b: 42 },
+]
 
 let sketch1 = new p5((p) => {
   let canvas;
@@ -80,7 +88,7 @@ let sketch1 = new p5((p) => {
 
   p.draw = function () {
     p.background(250);
-    
+    //console.log(layers);
     if (mode2D) {
       p.push();
       //resetMatrix(); // 座標系をリセット  
@@ -91,14 +99,14 @@ let sketch1 = new p5((p) => {
         layer.shapes.forEach(shape => {
           // 各図形の描画
           if (shape.type === 'awaji') {
-            p.fill(0, 255, 0, 100);
+            p.fill(165, 42, 42, 100);
             p.drawInvertedTriangle(shape.x, shape.y, shape.d);
             //console.log(shape.x, shape.y, shape.d);
           } else if (shape.type === 'ume') {
-            p.fill(255, 0, 0, 100);
+            p.fill(165, 42, 42, 100);
             p.ellipse(shape.x, shape.y, shape.d);
           } else if (shape.type === 'renzoku') {
-            p.fill(255, 0, 0, 100);
+            p.fill(165, 42, 42, 100);
             p.drawRenzokuawaji(shape.x, shape.y, shape.l, shape.w);
             //console.log(shape.x, shape.y, shape.l, shape.w);
           }
@@ -136,11 +144,11 @@ let sketch1 = new p5((p) => {
         p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       }
       
-      layers.forEach(layer => {
+      layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
-          drawShape(p, shape, index);
+            drawShape(p, shape, layerIndex, index);
         });
-      });
+      });    
       
       if (cameraFixed) {
         p.drawLabels();
@@ -198,12 +206,12 @@ let sketch1 = new p5((p) => {
         
         // ラベルの位置（形状の右上に配置）
         let labelX, labelY;
-        if (shape.p) {
+        if (shape.d) {
           labelX = x + (shape.d / 2);
           labelY = y - (shape.d / 2);
         } else {
-          labelX = x + shape.w / 2;
-          labelY = y - shape.l / 2;
+          labelX = x + shape.w / 1.5;
+          labelY = y - shape.l / 1.5;
         }
         
         // zに応じてテキストサイズを調整
@@ -316,6 +324,7 @@ let sketch1 = new p5((p) => {
       
       document.getElementById('add-button-container').classList.add('hidden');
       document.getElementById('color-selector').classList.remove('hidden');
+      document.getElementById('color-option').classList.remove('hidden');
       
       // 正面固定ボタンを追加
       fixFrontButton = p.createButton('2D <~> 3D');
@@ -346,6 +355,7 @@ let sketch1 = new p5((p) => {
       
       document.getElementById('add-button-container').classList.remove('hidden');
       document.getElementById('color-selector').classList.add('hidden');
+      document.getElementById('color-option').classList.add('hidden');
       
       // 正面固定ボタンを削除
       if (fixFrontButton) {
@@ -441,45 +451,61 @@ let sketch1 = new p5((p) => {
       if (p.key === 'c' || p.key === 'C') {
         console.log('c key pressed');
         if (selectedCurve) {
-          // If a curve is already selected, reset it
           p.resetSelectedCurveColor();
           p.resetSelectionState();
           nowKey = 'c';
         } else {
-          // Start new selection
           nowKey = 'c';
+          nowLayerKey = -1;
           nowShapeKey = -1;
           nowIndexKey = -1;
         }
-        //return; // Exit the function here to avoid further processing
       }
       
       if (nowKey === 'c') {
-        if (nowShapeKey === -1) {
-          // Shape selection phase
+        if (nowLayerKey === -1) {
+          // レイヤー選択フェーズ
+          if (p.key >= '0' && p.key <= '9') {
+            nowLayerKey = parseInt(p.key);
+            if (nowLayerKey < layers.length) {
+              console.log("Selected layer:", nowLayerKey);
+            } else {
+              console.log("Invalid layer index");
+              nowLayerKey = -1;
+            }
+          }
+        } else if (nowShapeKey === -1) {
+          // 図形選択フェーズ
           if (p.key >= '0' && p.key <= '9') {
             nowShapeKey = parseInt(p.key);
-            console.log("Selected shape:", 'shape' + nowShapeKey);
+            if (nowShapeKey < layers[nowLayerKey].shapes.length) {
+              console.log("Selected shape:", nowShapeKey);
+            } else {
+              console.log("Invalid shape index");
+              nowShapeKey = -1;
+            }
           }
         } else if (nowIndexKey === -1) {
-          // Curve selection phase
+          // カーブ選択フェーズ
           if (p.key >= '0' && p.key <= '9') {
             nowIndexKey = parseInt(p.key);
-            console.log("Selected curve index:", nowIndexKey);
-            if (innerCurvesData[nowShapeKey] && innerCurvesData[nowShapeKey][nowIndexKey]) {
-              selectedCurve = { shapeIndex: nowShapeKey, curveIndex: nowIndexKey };
+            let shape = layers[nowLayerKey].shapes[nowShapeKey];
+            if (innerCurvesData[nowLayerKey] && 
+                innerCurvesData[nowLayerKey][nowShapeKey] && 
+                innerCurvesData[nowLayerKey][nowShapeKey][nowIndexKey]) {
+              selectedCurve = { layerIndex: nowLayerKey, shapeIndex: nowShapeKey, curveIndex: nowIndexKey };
               console.log("Selected curve:", selectedCurve);
               p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
             } else {
               console.log("Invalid curve index");
-              nowIndexKey = -1; // Reset if invalid
+              nowIndexKey = -1;
             }
           }
         }
       }
     }
-
   }
+  
   /*
   function mouseClicked() {
     if (!mode2D && cameraFixed) {
@@ -533,26 +559,35 @@ let sketch1 = new p5((p) => {
   */
 
   p.changeSelectedCurveColor = function (color) {
-    if (selectedCurve) {
-      let { shapeIndex, curveIndex } = selectedCurve;
-      innerCurvesData[shapeIndex][curveIndex].color = color;
+  if (selectedCurve) {
+    let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+    if (innerCurvesData[layerIndex] && 
+        innerCurvesData[layerIndex][shapeIndex] && 
+        innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
+      innerCurvesData[layerIndex][shapeIndex][curveIndex].color = color;
     }
   }
+}
 
-  p.resetSelectedCurveColor = function () {
-    if (selectedCurve && originalColor) {
-      let { shapeIndex, curveIndex } = selectedCurve;
-      innerCurvesData[shapeIndex][curveIndex].color = originalColor;
+p.resetSelectedCurveColor = function () {
+  if (selectedCurve && originalColor) {
+    let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+    if (innerCurvesData[layerIndex] && 
+        innerCurvesData[layerIndex][shapeIndex] && 
+        innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
+      innerCurvesData[layerIndex][shapeIndex][curveIndex].color = originalColor;
     }
   }
+}
 
-  p.resetSelectionState = function () {
-    nowKey = '';
-    nowShapeKey = -1;
-    nowIndexKey = -1;
-    selectedCurve = null;
-    originalColor = null;
-  }
+p.resetSelectionState = function () {
+  nowKey = '';
+  nowLayerKey = -1;
+  nowShapeKey = -1;
+  nowIndexKey = -1;
+  selectedCurve = null;
+  originalColor = null;
+}
 
   p.mousePressed = function () {
     if (mode2D && document.getElementById('tab1').checked) {
@@ -862,8 +897,16 @@ function initializeCompleteView() {
       p.orbitControl();
       
       for (let i = compShapes.length - 1; i >= 0; i--) {
-        drawShape(p, compShapes[i], i);
+        //drawShape(p, compShapes[i], i);
       }
+      let indexCounter = 0;
+      layers.forEach((layer, layerIndex) => {
+        layer.shapes.forEach((shape, shapeIndex) => {
+          drawShape(p, shape, layerIndex, shapeIndex);
+          indexCounter++;
+        });
+      });
+      
     }
   }, 'canvas2');
 
@@ -948,7 +991,7 @@ function drawAxis(p) {
   p.line(0, 0, -400, 0, 0, 400);
 }
 
-function drawShape(p, shape, shapeIndex) {
+function drawShape(p, shape, layerIndex,shapeIndex) {
   p.push();
   p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
   let scaleValue = shape.scale * 1.62;
@@ -970,8 +1013,8 @@ function drawShape(p, shape, shapeIndex) {
   let shapeInnerCurves = [];
   for (let i = 0; i < innerCurves.length; i++) {
     let color;
-    if (innerCurvesData[shapeIndex] && innerCurvesData[shapeIndex][i]) {
-      color = innerCurvesData[shapeIndex][i].color;
+    if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {
+      color = innerCurvesData[layerIndex][shapeIndex][i].color;
     } else {
       color = innerCurveColors[i % innerCurveColors.length];
     }
@@ -989,8 +1032,17 @@ function drawShape(p, shape, shapeIndex) {
     });
   }
   
+  // `innerCurvesData[layerIndex]` が存在しない場合は初期化
+  if (!innerCurvesData[layerIndex]) {
+    innerCurvesData[layerIndex] = [];
+  }
+  
+  // `innerCurvesData[layerIndex][shapeIndex]` が存在しない場合は初期化
+  if (!innerCurvesData[layerIndex][shapeIndex]) {
+    innerCurvesData[layerIndex][shapeIndex] = [];
+  }
   // インナーカーブのデータを更新または追加
-  innerCurvesData[shapeIndex] = shapeInnerCurves;
+  innerCurvesData[layerIndex][shapeIndex] = shapeInnerCurves;
   
   p.pop();
 }
