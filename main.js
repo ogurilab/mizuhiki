@@ -453,13 +453,11 @@ let sketch1 = new p5((p) => {
         if (selectedCurve) {
           p.resetSelectedCurveColor();
           p.resetSelectionState();
-          nowKey = 'c';
-        } else {
-          nowKey = 'c';
-          nowLayerKey = -1;
-          nowShapeKey = -1;
-          nowIndexKey = -1;
-        }
+        } 
+        nowKey = 'c';
+        nowLayerKey = -1;
+        nowShapeKey = -1;
+        nowIndexKey = -1;
       }
       
       if (nowKey === 'c') {
@@ -735,8 +733,11 @@ p.resetSelectionState = function () {
       const dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
 
       if (layerIndex !== dropLayerIndex) {
-        const [draggedLayer] = layers.splice(layerIndex, 1);
-        layers.splice(dropLayerIndex, 0, draggedLayer);
+        const [draggedLayer] = layers.splice(layerIndex, 1);// 現在のレイヤーリストからドラッグされたレイヤーを取り出し、削除
+        layers.splice(dropLayerIndex, 0, draggedLayer);// 削除したレイヤーをドロップ先のインデックスに挿入
+        // innerCurvesData も対応するレイヤーの情報を移動
+        const [draggedCurveData] = innerCurvesData.splice(layerIndex, 1);// innerCurvesData からドラッグされたレイヤーに対応するデータを取り出し、削除
+        innerCurvesData.splice(dropLayerIndex, 0, draggedCurveData);// 削除したデータをドロップ先のインデックスに挿入
       }
     } else if (type === 'shape') {
       let dropLayerIndex;
@@ -757,11 +758,14 @@ p.resetSelectionState = function () {
 
       if (dropLayerIndex !== undefined) {
         const [draggedShape] = layers[layerIndex].shapes.splice(shapeIndex, 1);
+        const [draggedCurveData] = innerCurvesData[layerIndex].splice(shapeIndex, 1); // innerCurvesData からも削除
 
         if (dropShapeIndex === -1) {
             layers[dropLayerIndex].shapes.push(draggedShape);
+            innerCurvesData[dropLayerIndex].push(draggedCurveData); // innerCurvesData にも追加
         } else {
             layers[dropLayerIndex].shapes.splice(dropShapeIndex, 0, draggedShape);
+            innerCurvesData[dropLayerIndex].splice(dropShapeIndex, 0, draggedCurveData); // innerCurvesData にも挿入
         }
       }
     }
