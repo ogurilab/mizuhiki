@@ -54,6 +54,8 @@ let sketch1 = new p5((p) => {
   let highlightedShapeIndex = -1;
   let highlightedLayerIndex = -1;
   let isLayerManipulating = false;
+  let selectedColor = null;
+  let pendingShape = null;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -65,7 +67,7 @@ let sketch1 = new p5((p) => {
     document.getElementById('convert-button').addEventListener('click', p.convert);
     
     p.setupSizeSelectors();
-    p.setupColorSelector();
+    p.setupShapesColorSelector();
     definePoints();
     
     defaultCameraZ = (p.height/2) / p.tan(p.PI/6) * 1.15;
@@ -98,15 +100,21 @@ let sketch1 = new p5((p) => {
       layers.forEach(layer => {
         layer.shapes.forEach(shape => {
           // 各図形の描画
+          if (shape.color) {
+            p.fill(shape.color);
+          } else  {
+            p.noStroke();
+            p.noFill();
+          }
           if (shape.type === 'awaji') {
-            p.fill(165, 42, 42, 100);
+            //p.fill(165, 42, 42, 100);
             p.drawInvertedTriangle(shape.x, shape.y, shape.d);
             //console.log(shape.x, shape.y, shape.d);
           } else if (shape.type === 'ume') {
-            p.fill(165, 42, 42, 100);
+            //p.fill(165, 42, 42, 100);
             p.ellipse(shape.x, shape.y, shape.d);
           } else if (shape.type === 'renzoku') {
-            p.fill(165, 42, 42, 100);
+            //p.fill(165, 42, 42, 100);
             p.drawRenzokuawaji(shape.x, shape.y, shape.l, shape.w);
             //console.log(shape.x, shape.y, shape.l, shape.w);
           }
@@ -291,27 +299,59 @@ let sketch1 = new p5((p) => {
         ...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
     }
-    
-    // 新しいレイヤーを作成し、そこに新しい図形を追加
-    let newLayer = {name: `Layer ${layers.length + 1}`, shapes: [newShape]};
-    layers.push(newLayer);
 
+    pendingShape = newShape;
+    selectedColor = null;
+    document.getElementById('color-selector').classList.remove('hidden');
+    
     //サイズを選択したらボタンを隠す
     document.getElementById('ume-size-selector').classList.add('hidden');
     document.getElementById('awaji-size-selector').classList.add('hidden');
     document.getElementById('renzoku-size-selector').classList.add('hidden');
+  }
 
-    p.updateLayerList();
-    // zIndexを設定
-    let zOffset = 0;
-    layers.forEach(layer => {
-      layer.shapes.forEach(shape => {
-        shape.zIndex = zOffset;
+  p.setupShapesColorSelector = function () {
+    let colorSelector = document.getElementById('color-selector');
+    colorSelector.querySelectorAll('.color-option').forEach(button => {
+      button.addEventListener('click', () => {
+        if (mode2D == true) {// 図景全体の色設定
+          console.log("ok");
+          selectedColor = button.getAttribute('data-color');
+          colorSelector.classList.add('hidden');
+          if (pendingShape) {
+            p.addNewShape();
+          }
+        } else {// インナーカーブの色設定
+          p.changeSelectedCurveColor(button.getAttribute('data-color'));
+        }
       });
-        zOffset += 8;
     });
-    // compShapesを更新
-    compShapes = layers.flatMap(layer => layer.shapes);
+  }
+
+  p.addNewShape = function () {
+    if (pendingShape && selectedColor) {
+        pendingShape.color = selectedColor;
+        //pendingShape.innerCurveColor = selectedColor; // インナーカーブ用の色も設定
+        let newLayer = {name: `Layer ${layers.length + 1}`, shapes: [pendingShape]};
+        layers.push(newLayer);
+
+        p.updateLayerList();
+        
+        // zIndexを設定
+        let zOffset = 0;
+        layers.forEach(layer => {
+            layer.shapes.forEach(shape => {
+                shape.zIndex = zOffset;
+            });
+            zOffset += 8;
+        });
+
+        // compShapesを更新
+        compShapes = layers.flatMap(layer => layer.shapes);
+
+        pendingShape = null;
+        selectedColor = null;  // 色の選択をリセット
+    }
   }
 
   //2D->3Dへの変換
@@ -432,14 +472,6 @@ let sketch1 = new p5((p) => {
 
     // 該当するタイプとサイズのパラメータを返す
     return params[type][cmSize];
-  }
-  
-
-  p.setupColorSelector = function () {
-    let colorSelector = document.getElementById('color-selector');
-    colorSelector.querySelectorAll('.color-option').forEach(button => {
-      button.addEventListener('click', () => p.changeSelectedCurveColor(button.getAttribute('data-color')));
-    });
   }
 
   p.toggleFixedFrontView = function () {
@@ -1057,7 +1089,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, f) {
     if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {
       color = innerCurvesData[layerIndex][shapeIndex][i].color;
     } else {
-      color = innerCurveColors[i % innerCurveColors.length];
+      color=shape.color;
     }
     
     if (typeof color === 'string') {
