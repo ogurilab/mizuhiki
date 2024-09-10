@@ -168,7 +168,7 @@ let sketch1 = new p5((p) => {
         try {
           const shape = layer.shapes[highlightedShapeIndex];
           p.push();
-          p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+          p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex + 1);
           p.noFill();
           p.stroke(255, 0, 0);
           p.strokeWeight(4);
@@ -315,7 +315,6 @@ let sketch1 = new p5((p) => {
     colorSelector.querySelectorAll('.color-option').forEach(button => {
       button.addEventListener('click', () => {
         if (mode2D == true) {// 図景全体の色設定
-          console.log("ok");
           selectedColor = button.getAttribute('data-color');
           colorSelector.classList.add('hidden');
           if (pendingShape) {
