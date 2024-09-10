@@ -347,6 +347,13 @@ let sketch1 = new p5((p) => {
 
         // compShapesを更新
         compShapes = layers.flatMap(layer => layer.shapes);
+  
+        // innerCurvesData の初期化
+        let newLayerIndex = layers.length - 1; // 新しいレイヤーのインデックス
+        if (!innerCurvesData[newLayerIndex]) {
+            innerCurvesData[newLayerIndex] = [];
+        }
+        //innerCurvesData[newLayerIndex].push([]);  // 新しい shape に対応する空のデータを追加（drop()でやっているためなくていいっぽい？）
 
         pendingShape = null;
         selectedColor = null;  // 色の選択をリセット
