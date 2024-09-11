@@ -1046,6 +1046,11 @@ function initializeCompleteView() {
         // 既存のキャンバスをクリア
         modalCanvasContainer.innerHTML = '';
 
+        // プロセスバッファー用のdiv要素を作成
+        const processBuffer = document.createElement('div');
+        processBuffer.id = 'process-buffer';
+        modalCanvasContainer.appendChild(processBuffer);
+
         // グローバル変数としてボタンを取得
         const prevButton = document.getElementById('prevButton');
         const nextButton = document.getElementById('nextButton');
@@ -1061,6 +1066,9 @@ function initializeCompleteView() {
           // ボタンの色を更新
           prevButton.style.backgroundColor = prevButton.disabled ? '#ccc' : '#007bff';
           nextButton.style.backgroundColor = nextButton.disabled ? '#ccc' : '#007bff';
+
+          // 同時に工程数をプロセスバッファーで表示
+          processBuffer.textContent = `${processNo} / ${totalProcesses}`;
         }
 
         // キャンバスを生成し、モーダル内に追加
@@ -1076,7 +1084,7 @@ function initializeCompleteView() {
             p.orbitControl();
             // 制御点に基づくカーブ描画やパーツの描画をここで行う
             // 現在の processNo に基づいて制御点を取得、描画
-            drawShape(p, shape, layerIndex, shapeIndex, -1, processNo);
+            drawShape(p, shape, layerIndex, shapeIndex, 0, processNo);
           };
         }, modalCanvasContainer);
        
@@ -1165,6 +1173,8 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   p.push();
   if (parts_f == -1) {
     p.translate(30, 20, 0);
+  } else if (parts_f == 0) {
+    p.translate(0, 0, 0);
   } else {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
   }
@@ -1225,6 +1235,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   p.pop();
 }
 
+//各モデル（工程の変数があるので後々消したい）
 function definePoints() {
   ume_points = [
     { x: -40, y: 40, z: -8 },
@@ -1374,12 +1385,18 @@ function getPartsPoints(type, processNo) {
 const partsPoints = {
   awaji: {
     process1: [
-      { x: -70, y: -30, z: -5 },
-      { x: 45, y: 0, z: -5 },
-      { x: 30, y: 65, z: 8 },
-      { x: -30, y: 65, z: -8 },
-      { x: -45, y: 0, z: 5 },
-      { x: 70, y: -30, z: 5 },
+      { x: -200, y: -90, z: -5 },
+      { x: -120, y: -80, z: -5 }, 
+      { x: -45, y: -60, z: -5 }, 
+      { x: 18, y: -30, z: -5 }, 
+      { x: 45, y: 15, z: -5 }, 
+      { x: 30, y: 65, z: 8 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 15, z: 5 }, 
+      { x: -18, y: -30, z: 5 }, 
+      { x: 45, y: -60, z: 5 }, 
+      { x: 120, y: -80, z: 5 }, 
+      { x: 200, y: -90, z: 5 },
     ],
     process2: [
       { x: 90, y: -90, z: 0 },
@@ -1392,8 +1409,11 @@ const partsPoints = {
       { x: 45, y: 0, z: -5 },
       { x: 30, y: 65, z: 8 },
       { x: -30, y: 65, z: -8 },
-      { x: -45, y: 0, z: 5 },
-      { x: 70, y: -30, z: 5 },
+      { x: -45, y: 15, z: 5 },
+      { x: -18, y: -30, z: 5 }, 
+      { x: 45, y: -60, z: 5 }, 
+      { x: 120, y: -80, z: 5 }, 
+      { x: 200, y: -90, z: 5 },
     ],
     process3: [
       { x: 90, y: -90, z: 0 },
