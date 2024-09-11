@@ -54,6 +54,7 @@
         <button class="color-option" data-color="blue" style="background-color: blue;"></button>
         <button class="color-option" data-color="green" style="background-color: green;"></button>
         <button class="color-option" data-color="brown" style="background-color: brown;"></button>
+        <button class="color-option" data-color="#C5956B" style="background-color: #C5956B;"></button>
     </div>
     <div id="canvas-container">
       <div id="layer-menu">
@@ -71,6 +72,18 @@
       <div id="complete-view-container">
       
       <hr>
+    </div>
+    <!-- モーダルのHTML -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modal-text">モーダルのコンテンツがここに表示されます。</p>
+        <div class="modal-process">
+          <button id="prevButton" class="arrow-button">&larr;</button>
+          <div id="modal-canvas-container"></div>
+          <button id="nextButton" class="arrow-button">&rarr;</button>
+        </div>
+      </div>
     </div>
     </div>
     </div>

@@ -154,7 +154,7 @@ let sketch1 = new p5((p) => {
       
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
-            drawShape(p, shape, layerIndex, index, 0);
+            drawShape(p, shape, layerIndex, index, 0, -1);
         });
       });    
       
@@ -944,7 +944,7 @@ function initializeCompleteView() {
       let indexCounter = 0;
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, shapeIndex) => {
-          drawShape(p, shape, layerIndex, shapeIndex, 0);
+          drawShape(p, shape, layerIndex, shapeIndex, 0, -1);
           indexCounter++;
         });
       });
@@ -1015,7 +1015,7 @@ function initializeCompleteView() {
         p.draw = function() {
           p.background(250);
           p.orbitControl();
-          drawShape(p, shape, layerIndex, shapeIndex, -1);  // 個別の形状を描画
+          drawShape(p, shape, layerIndex, shapeIndex, -1, -1);  // 個別の形状を描画
         }
       }, canvasWrapper);
 
@@ -1027,10 +1027,91 @@ function initializeCompleteView() {
       // ボタンのクリックイベントを設定
       createButton.addEventListener('click', () => {
         // ボタンがクリックされたときの処理をここに書く
-        console.log(`「作成する」ボタンが押されました: レイヤー${layerIndex}, 形状${shapeIndex}`);
-        // 例: その形状の作り方を表示する処理など
+        //console.log(`レイヤー ${layerIndex} のパーツ ${shapeIndex} の作り方の表示`);
+        showModal(layerIndex, shapeIndex);
       });
 
+      // モーダルを表示する関数
+      function showModal(layerIndex, shapeIndex) {
+        const modal = document.getElementById('modal');
+        const modalText = document.getElementById('modal-text');
+        const modalCanvasContainer = document.getElementById('modal-canvas-container');
+        
+        // モーダルに表示する内容を設定
+        modalText.textContent = `水引中央で作成してください`;
+
+        // モーダルを表示
+        modal.style.display = 'block';
+
+        // 既存のキャンバスをクリア
+        modalCanvasContainer.innerHTML = '';
+
+        // グローバル変数としてボタンを取得
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+
+        let processNo = 1;
+        const totalProcesses = getTotalProcesses(shape.type);
+
+        // ボタンの状態を更新する関数
+        function updateButtonStates() {
+          prevButton.disabled = processNo <= 1;
+          nextButton.disabled = processNo >= totalProcesses;
+
+          // ボタンの色を更新
+          prevButton.style.backgroundColor = prevButton.disabled ? '#ccc' : '#007bff';
+          nextButton.style.backgroundColor = nextButton.disabled ? '#ccc' : '#007bff';
+        }
+
+        // キャンバスを生成し、モーダル内に追加
+        const sketch = new p5((p) => {
+          p.setup = function() {
+            let canvas = p.createCanvas(400, 400, p.WEBGL);
+            canvas.parent(modalCanvasContainer);
+            updateButtonStates();
+          };
+
+          p.draw = function() {
+            p.background(250);
+            p.orbitControl();
+            // 制御点に基づくカーブ描画やパーツの描画をここで行う
+            // 現在の processNo に基づいて制御点を取得、描画
+            drawShape(p, shape, layerIndex, shapeIndex, -1, processNo);
+          };
+        }, modalCanvasContainer);
+       
+        // 矢印ボタンのクリックイベント
+        prevButton.addEventListener('click', () => {
+          if (processNo > 1) {
+            processNo--;
+            updateButtonStates();
+            // キャンバスを再描画
+            sketch.redraw();
+          }
+        });
+
+        nextButton.addEventListener('click', () => {
+          if (processNo < totalProcesses) {
+            processNo++;
+            updateButtonStates();
+            // キャンバスを再描画
+            sketch.redraw();
+          }
+        });
+
+        // モーダルを閉じるイベント
+        const closeModal = document.querySelector('.modal .close');
+        closeModal.onclick = function() {
+          modal.style.display = 'none';
+        }
+
+        // モーダルの外をクリックしたら閉じる
+        window.onclick = function(event) {
+          if (event.target === modal) {
+            modal.style.display = 'none';
+          }
+        }
+      }
     });
   });
 }
@@ -1080,9 +1161,9 @@ function drawAxis(p) {
   p.line(0, 0, -400, 0, 0, 400);
 }
 
-function drawShape(p, shape, layerIndex,shapeIndex, f) {
+function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   p.push();
-  if (f == -1) {
+  if (parts_f == -1) {
     p.translate(30, 20, 0);
   } else {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
@@ -1091,12 +1172,16 @@ function drawShape(p, shape, layerIndex,shapeIndex, f) {
   p.scale(scaleValue);
   //console.log(shape.x, shape.y); 
   let points;
-  if (shape.type === 'awaji') {
-    points = awaji_points;
-  } else if (shape.type === 'ume') {
-    points = ume_points;
-  } else if (shape.type === 'renzoku') {
-    points = renzokuAwaji(3);//何連続か
+  if (processNo == -1) {
+    if (shape.type === 'awaji') {
+      points = awaji_points;
+    } else if (shape.type === 'ume') {
+      points = ume_points;
+    } else if (shape.type === 'renzoku') {
+      points = renzokuAwaji(3);//何連続か
+    }
+  } else {
+    points = getProcessPoints(shape.type, processNo);
   }
   
   let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
@@ -1218,6 +1303,131 @@ function definePoints() {
     { x: -15, y: -75, z: 7 },
     { x: 45, y: -30, z: -5 },
   ]
+}
+/*
+function getPartsPoints(type, processNo) {
+  let awaji = {
+    process1: [
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+    ],
+    process2: [
+      { x: 90, y: -90, z: 0 },
+      { x: 60, y: -30, z: -5 },
+      { x: 40, y: 0, z: 5 },
+      { x: -10, y: 45, z: -5 },
+      { x: -70, y: 25, z: 10 },
+      { x: -70, y: -30, z: -5 },
+      { x: -15, y: -45, z: 7 },
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+    ],
+    process3: [
+      { x: 90, y: -90, z: 0 },
+      { x: 60, y: -30, z: -5 },
+      { x: 40, y: 0, z: 5 },
+      { x: -10, y: 45, z: -5 },
+      { x: -70, y: 25, z: 10 },
+      { x: -70, y: -30, z: -5 },
+      { x: -15, y: -45, z: 7 },
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+      { x: 15, y: -45, z: -7 },//
+      { x: 70, y: -30, z: 5 },
+      { x: 70, y: 25, z: -10 },
+      { x: 10, y: 45, z: 5 },
+      { x: -40, y: 0, z: -5 },
+      { x: -60, y: -30, z: 5 },
+      { x: -90, y: -90, z: 0 }
+    ]
+  }
+
+  // typeによってパーツを選択
+  switch (type) {
+    case 'awaji':
+      selectedParts = awaji;
+      break;
+    default:
+      selectedParts = awaji; // デフォルトはawaji
+  }
+
+  // totalProcesses（プロセスの数）を取得
+  const totalProcesses = Object.keys(selectedParts).length;
+
+  // 指定されたprocessNoのデータを取得
+  const processPoints = selectedParts[`process${processNo}`];
+
+  // 必要なデータをオブジェクトで返す
+  return {
+    points: processPoints,
+    totalProcesses: totalProcesses,
+    processNo: processNo,
+  };
+}*/
+
+const partsPoints = {
+  awaji: {
+    process1: [
+      { x: -70, y: -30, z: -5 },
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+      { x: 70, y: -30, z: 5 },
+    ],
+    process2: [
+      { x: 90, y: -90, z: 0 },
+      { x: 60, y: -30, z: -5 },
+      { x: 40, y: 0, z: 5 },
+      { x: -10, y: 45, z: -5 },
+      { x: -70, y: 25, z: 10 },
+      { x: -70, y: -30, z: -5 },
+      { x: -15, y: -45, z: 7 },
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+      { x: 70, y: -30, z: 5 },
+    ],
+    process3: [
+      { x: 90, y: -90, z: 0 },
+      { x: 60, y: -30, z: -5 },
+      { x: 40, y: 0, z: 5 },
+      { x: -10, y: 45, z: -5 },
+      { x: -70, y: 25, z: 10 },
+      { x: -70, y: -30, z: -5 },
+      { x: -15, y: -45, z: 7 },
+      { x: 45, y: 0, z: -5 },
+      { x: 30, y: 65, z: 8 },
+      { x: -30, y: 65, z: -8 },
+      { x: -45, y: 0, z: 5 },
+      { x: 15, y: -45, z: -7 },//
+      { x: 70, y: -30, z: 5 },
+      { x: 70, y: 25, z: -10 },
+      { x: 10, y: 45, z: 5 },
+      { x: -40, y: 0, z: -5 },
+      { x: -60, y: -30, z: 5 },
+      { x: -90, y: -90, z: 0 }
+    ],
+    // 他のプロセス
+  },
+  // 他のパーツタイプ
+};
+
+function getTotalProcesses(type) {
+  const selectedParts = partsPoints[type];
+  return Object.keys(selectedParts).length;
+}
+
+function getProcessPoints(type, processNo) {
+  const selectedParts = partsPoints[type];
+  return selectedParts[`process${processNo}`];
 }
 
 function renzokuAwaji(n) {
