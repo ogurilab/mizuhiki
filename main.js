@@ -909,7 +909,7 @@ p.resetSelectionState = function () {
   }
 }, 'canvas');
 
-let additionalCanvas;
+let partsCanvas;
 
 function initializeCompleteView() {
   const container = document.getElementById('complete-view-container');
@@ -958,21 +958,21 @@ function initializeCompleteView() {
 
   // 追加のキャンバスコンテナを追加
   /*
-  const additionalCanvasContainer = document.createElement('div');
-  additionalCanvasContainer.id = 'additional-canvas';
-  container.appendChild(additionalCanvasContainer);
+  const partsCanvasContainer = document.createElement('div');
+  partsCanvasContainer.id = 'parts-canvas';
+  container.appendChild(partsCanvasContainer);
 
   // 既存の追加キャンバスを削除
-  if (additionalCanvas) {
-    additionalCanvas.remove();
+  if (partsCanvas) {
+    partsCanvas.remove();
   }*/
 
   // 追加のキャンバスを初期化
   /*
-  additionalCanvas = new p5((p) => {
+  partsCanvas = new p5((p) => {
     p.setup = function() {
       let canvas = p.createCanvas(400, 400);
-      canvas.parent('additional-canvas');
+      canvas.parent('parts-canvas');
     }
 
     p.draw = function() {
@@ -981,28 +981,29 @@ function initializeCompleteView() {
       p.text('追加のキャンバス', 10, 30);
       // ここに追加のキャンバスの描画コードを記述
     }
-  }, 'additional-canvas');*/
+  }, 'parts-canvas');*/
 
   // 追加のテキストコンテンツ
-  const additionalContent = document.createElement('h1');
-  additionalContent.textContent = 'パーツ';
-  container.appendChild(additionalContent);// 追加のキャンバスコンテナを作成
-  const additionalCanvasContainer = document.createElement('div');
-  additionalCanvasContainer.id = 'additional-canvas-container';
-  container.appendChild(additionalCanvasContainer);
+  const partsContent = document.createElement('h1');
+  partsContent.textContent = 'パーツ一覧';
+  container.appendChild(partsContent);
+  // 追加のキャンバスコンテナを作成
+  const partsCanvasContainer = document.createElement('div');
+  partsCanvasContainer.id = 'parts-canvas-container';
+  container.appendChild(partsCanvasContainer);
   
   // 既存のキャンバスがあれば削除
-  document.querySelectorAll('#additional-canvas-container canvas').forEach(canvas => {
+  document.querySelectorAll('#parts-canvas-container canvas').forEach(canvas => {
     canvas.remove();
   });
   
-  // 各レイヤーごとに新しいキャンバスを作成
+  // 各パーツごとに新しいキャンバスを作成
   layers.forEach((layer, layerIndex) => {
     layer.shapes.forEach((shape, shapeIndex) => {
       // キャンバス要素を作成
       const canvasWrapper = document.createElement('div');
       canvasWrapper.className = 'canvas-wrapper';
-      additionalCanvasContainer.appendChild(canvasWrapper);
+      partsCanvasContainer.appendChild(canvasWrapper);
       
       // 新しいp5インスタンスを作成して個々のキャンバスに3Dモデルを描画
       new p5((p) => {
@@ -1017,6 +1018,19 @@ function initializeCompleteView() {
           drawShape(p, shape, layerIndex, shapeIndex, -1);  // 個別の形状を描画
         }
       }, canvasWrapper);
+
+      // 「作成する」ボタンの追加
+      const createButton = document.createElement('button');
+      createButton.textContent = '作成する'; // ボタンのテキスト
+      canvasWrapper.appendChild(createButton);
+
+      // ボタンのクリックイベントを設定
+      createButton.addEventListener('click', () => {
+        // ボタンがクリックされたときの処理をここに書く
+        console.log(`「作成する」ボタンが押されました: レイヤー${layerIndex}, 形状${shapeIndex}`);
+        // 例: その形状の作り方を表示する処理など
+      });
+
     });
   });
 }
