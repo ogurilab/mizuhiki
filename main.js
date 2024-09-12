@@ -1046,10 +1046,10 @@ function initializeCompleteView() {
         // 既存のキャンバスをクリア
         modalCanvasContainer.innerHTML = '';
 
-        // プロセスバッファー用のdiv要素を作成
-        const processBuffer = document.createElement('div');
-        processBuffer.id = 'process-buffer';
-        modalCanvasContainer.appendChild(processBuffer);
+        // プロセス数表示用のテキスト
+        const processText = document.createElement('div');
+        processText.id = 'process-buffer';
+        modalCanvasContainer.appendChild(processText);
 
         // グローバル変数としてボタンを取得
         const prevButton = document.getElementById('prevButton');
@@ -1067,8 +1067,8 @@ function initializeCompleteView() {
           prevButton.style.backgroundColor = prevButton.disabled ? '#ccc' : '#007bff';
           nextButton.style.backgroundColor = nextButton.disabled ? '#ccc' : '#007bff';
 
-          // 同時に工程数をプロセスバッファーで表示
-          processBuffer.textContent = `${processNo} / ${totalProcesses}`;
+          // 同時に工程数も表示
+          processText.textContent = `${processNo} / ${totalProcesses}`;
         }
 
         // キャンバスを生成し、モーダル内に追加
