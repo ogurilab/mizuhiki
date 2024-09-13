@@ -56,6 +56,8 @@ let sketch1 = new p5((p) => {
   let isLayerManipulating = false;
   let selectedColor = null;
   let pendingShape = null;
+  let resizeCornerSize = 10;
+  let resizing = null;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -110,16 +112,27 @@ let sketch1 = new p5((p) => {
             //p.fill(165, 42, 42, 100);
             p.drawInvertedTriangle(shape.x, shape.y, shape.d);
             //console.log(shape.x, shape.y, shape.d);
+            // 逆三角形の右上の頂点にリサイズコーナーを配置
+            let cornerX = shape.x + shape.d / 2;
+            let cornerY = shape.y - shape.d / 2;
+            p.rect(cornerX - resizeCornerSize / 2, cornerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'ume') {
             //p.fill(165, 42, 42, 100);
             p.ellipse(shape.x, shape.y, shape.d);
+            let markerX = shape.x + shape.d/2 * p.cos(p.QUARTER_PI);  // QUARTER_PI=45度
+            let markerY = shape.y + shape.d/2 * p.sin(p.QUARTER_PI);
+            p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'renzoku') {
             //p.fill(165, 42, 42, 100);
-            p.drawRenzokuawaji(shape.x, shape.y, shape.l, shape.w);
-            //console.log(shape.x, shape.y, shape.l, shape.w);
+            p.drawRenzokuawaji(shape.x, shape.y, shape.w, shape.l);
+            p.rect(shape.x + shape.w/2 - resizeCornerSize/2, shape.y + shape.l/2 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
           }
         });
       });
+      // サイズを変更する処理
+      if (resizing) {
+        p.resizeShape(resizing);
+      }
       // ハイライトの描画
       if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
         const layer = layers[highlightedLayerIndex];
@@ -154,7 +167,7 @@ let sketch1 = new p5((p) => {
       
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
-            drawShape(p, shape, layerIndex, index, 0, -1);
+          drawShape(p, shape, layerIndex, index, 0, -1);
         });
       });    
       
@@ -250,7 +263,7 @@ let sketch1 = new p5((p) => {
   }
 
   //連続あわじ結びの描画
-  p.drawRenzokuawaji = function (x, y, l, w) {
+  p.drawRenzokuawaji = function (x, y, w, l) {
     p.push();
     //p.translate(x, y);
     p.rectMode(p.CENTER);
@@ -286,7 +299,7 @@ let sketch1 = new p5((p) => {
         w: shapeWidth,
         l: shapeLength,
         scale: Math.max(shapeLength, shapeWidth) / 500,
-        ...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
+        //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else {
       let shapeDiameter = size * 50; // 1cm = 50px と仮定
@@ -296,7 +309,7 @@ let sketch1 = new p5((p) => {
         y: p.height/2,
         d: shapeDiameter,
         scale: shapeDiameter / 300,
-        ...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
     }
 
@@ -377,6 +390,19 @@ let sketch1 = new p5((p) => {
       fixFrontButton.position(p.width - 100, p.height - 40);
       fixFrontButton.mousePressed(p.toggleFixedFrontView);
 
+      // サイズ決定
+      layers.forEach((layer) => {
+        layer.shapes.forEach((shape) => {
+            if (shape.d != 0) {
+              shape.scale = shape.d/300;
+              p.decideSizeParameters(shape, shape.type, shape.d, 0, 0);
+            } else {
+              shape.scale = Math.max(shape.l, shape.w) / 500;
+              p.decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
+            }
+        });
+      });    
+
       // zIndexを設定
       /*
       let zOffset = 0;
@@ -423,6 +449,81 @@ let sketch1 = new p5((p) => {
     }
     }
 
+    p.decideSizeParameters = function (shape, type, circleDiameter, shapeWidth, shapeLength) {
+      let cmSize = circleDiameter / 50;
+      if (circleDiameter != 0) {
+        cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
+      } else {
+        cmSize = shapeLength / 50;
+      }
+
+      // デフォルトのパラメータ
+      let defaultParams = {
+        numInnerCurves: 4,
+        outerCurveWeight: 30,
+        innerCurveWeight: 6.5
+      };
+  
+      // モデルの種類ごとにパラメータを定義
+      let params = {
+        ume: {
+          1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+          2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+          2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
+          3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
+          4: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+        },
+        awaji: {
+          1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
+          1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
+          2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
+          2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
+          3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+        },
+        renzoku: {
+          2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
+          3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
+          4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+          5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+        },
+        // その他のモデルが追加される場合はここに定義
+        other: {
+          1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
+          1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+          2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
+          2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
+          3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+        }
+      };
+  
+      // 指定されたタイプが存在しない場合、デフォルトパラメータを適用
+      if (!params[type]) {
+        shape.numInnerCurves = defaultParams.numInnerCurves;
+        shape.outerCurveWeight = defaultParams.outerCurveWeight;
+        shape.innerCurveWeight = defaultParams.innerCurveWeight;
+        return;
+      }
+
+      // 使用可能なサイズキーを取得して、数値に変換
+      let availableSizes = Object.keys(params[type]).map(size => Number(size));
+      // 初期値として最も近いサイズを最初の要素に設定
+      let closestSize = availableSizes[0];
+      // 各サイズと比較して、cmSizeに最も近いサイズを探す
+      for (let i = 1; i < availableSizes.length; i++) {
+        let currentSize = availableSizes[i];
+        // 現在のサイズが、これまでの最も近いサイズよりもcmSizeに近い場合は更新
+        if (Math.abs(currentSize - cmSize) < Math.abs(closestSize - cmSize)) {
+          closestSize = currentSize;
+        }
+      }
+
+      // 最も近いサイズに対応するパラメータを shape に適用
+      let closestParams = params[type][closestSize];
+      shape.numInnerCurves = closestParams.numInnerCurves;
+      shape.outerCurveWeight = closestParams.outerCurveWeight;
+      shape.innerCurveWeight = closestParams.innerCurveWeight;
+      //console.log(shape.numInnerCurves, shape.outerCurveWeight);
+    }
 
   p.getCurveParameters = function (type, circleDiameter, shapeLength, shapeWidth) {
     let cmSize = circleDiameter / 50;
@@ -595,37 +696,76 @@ let sketch1 = new p5((p) => {
   */
 
   p.changeSelectedCurveColor = function (color) {
-  if (selectedCurve) {
-    let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
-    if (innerCurvesData[layerIndex] && 
-        innerCurvesData[layerIndex][shapeIndex] && 
-        innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
-      innerCurvesData[layerIndex][shapeIndex][curveIndex].color = color;
+    if (selectedCurve) {
+      let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+      if (innerCurvesData[layerIndex] && 
+          innerCurvesData[layerIndex][shapeIndex] && 
+          innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
+        innerCurvesData[layerIndex][shapeIndex][curveIndex].color = color;
+      }
     }
   }
-}
 
-p.resetSelectedCurveColor = function () {
-  if (selectedCurve && originalColor) {
-    let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
-    if (innerCurvesData[layerIndex] && 
-        innerCurvesData[layerIndex][shapeIndex] && 
-        innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
-      innerCurvesData[layerIndex][shapeIndex][curveIndex].color = originalColor;
+  p.resetSelectedCurveColor = function () {
+    if (selectedCurve && originalColor) {
+      let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+      if (innerCurvesData[layerIndex] && 
+          innerCurvesData[layerIndex][shapeIndex] && 
+          innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
+        innerCurvesData[layerIndex][shapeIndex][curveIndex].color = originalColor;
+      }
     }
   }
-}
 
-p.resetSelectionState = function () {
-  nowKey = '';
-  nowLayerKey = -1;
-  nowShapeKey = -1;
-  nowIndexKey = -1;
-  selectedCurve = null;
-  originalColor = null;
-}
+  p.resetSelectionState = function () {
+    nowKey = '';
+    nowLayerKey = -1;
+    nowShapeKey = -1;
+    nowIndexKey = -1;
+    selectedCurve = null;
+    originalColor = null;
+  }
 
   p.mousePressed = function () {
+    for (let layerIndex = layers.length - 1; layerIndex >= 0; layerIndex--) {
+      let layer = layers[layerIndex];
+      for (let shapeIndex = layer.shapes.length - 1; shapeIndex >= 0; shapeIndex--) {
+        let shape = layer.shapes[shapeIndex];
+  
+        // 図形ごとの判定
+        if (shape.type === 'awaji') {
+          let cornerX = shape.x + shape.d / 2;
+          let cornerY = shape.y - shape.d / 2;
+          if (p.mouseX > cornerX - resizeCornerSize && p.mouseX < cornerX &&
+              p.mouseY > cornerY - resizeCornerSize && p.mouseY < cornerY) {
+                console.log("ok");
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
+            return;
+          }
+        } else if (shape.type === 'ume') {
+          let markerX = shape.x + shape.d / 2 * p.cos(p.QUARTER_PI);
+          let markerY = shape.y + shape.d / 2 * p.sin(p.QUARTER_PI);
+          if (p.mouseX > markerX - resizeCornerSize / 2 && p.mouseX < markerX + resizeCornerSize / 2 &&
+              p.mouseY > markerY - resizeCornerSize / 2 && p.mouseY < markerY + resizeCornerSize / 2) {
+                console.log("ok");
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
+            return;
+          }
+        } else if (shape.type === 'renzoku') {
+          let cornerX = shape.x + shape.w / 2;
+          let cornerY = shape.y + shape.l / 2;
+          if (p.mouseX > cornerX - resizeCornerSize / 2 && p.mouseX < cornerX + resizeCornerSize / 2 &&
+              p.mouseY > cornerY - resizeCornerSize / 2 && p.mouseY < cornerY + resizeCornerSize / 2) {
+                console.log("ok");
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
+            return;
+          }
+        }
+      }
+    }
+    resizing = null; // どの図形にも当たらなかった場合はリサイズ状態を解除
+
+    // 図形移動
     if (mode2D && document.getElementById('tab1').checked) {
       for (let i = 0; i < layers.length; i++) {
         for (let j = 0; j < layers[i].shapes.length; j++) {
@@ -652,6 +792,11 @@ p.resetSelectionState = function () {
   }
   
   p.mouseDragged = function () {
+    // リサイズ処理
+    if (resizing) {
+      p.resizeShape(resizing);
+    }
+    // 図形移動
     if (mode2D && selectedShape && document.getElementById('tab1').checked) {
       if (selectedShape.d) {
         selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
@@ -664,9 +809,26 @@ p.resetSelectionState = function () {
   }
   
   p.mouseReleased = function () {
+    if (resizing) {
+      resizing = null;
+    }
     selectedShape = null;
     selectedLayerIndex = -1;
   }
+
+  p.resizeShape = function (resizing) {
+    let layer = layers[resizing.layerIndex];
+    let shape = layer.shapes[resizing.shapeIndex];
+  
+    if (shape.type === 'awaji') {
+      shape.d = (p.mouseX-shape.x) * 2;
+    } else if (shape.type === 'ume') {
+      shape.d = p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2;
+    } else if (shape.type === 'renzoku') {
+      shape.w = (p.mouseX - shape.x) * 2;
+      shape.l = (p.mouseY - shape.y) * 2;
+    }
+  }  
 
   p.toggleLayerMenu = function () {
     layerList.classList.toggle('hidden');
@@ -1084,7 +1246,7 @@ function initializeCompleteView() {
             p.orbitControl();
             // 制御点に基づくカーブ描画やパーツの描画をここで行う
             // 現在の processNo に基づいて制御点を取得、描画
-            drawShape(p, shape, layerIndex, shapeIndex, 0, processNo);
+            drawShape(p, shape, layerIndex, shapeIndex, 1, processNo);
           };
         }, modalCanvasContainer);
        
@@ -1173,7 +1335,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   p.push();
   if (parts_f == -1) {
     p.translate(30, 20, 0);
-  } else if (parts_f == 0) {
+  } else if (parts_f == 1) {
     p.translate(0, 0, 0);
   } else {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
