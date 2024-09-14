@@ -393,7 +393,7 @@ let sketch1 = new p5((p) => {
       // サイズ決定
       layers.forEach((layer) => {
         layer.shapes.forEach((shape) => {
-            if (shape.d != 0) {
+            if (shape.d) {
               shape.scale = shape.d/300;
               p.decideSizeParameters(shape, shape.type, shape.d, 0, 0);
             } else {
@@ -820,13 +820,25 @@ let sketch1 = new p5((p) => {
     let layer = layers[resizing.layerIndex];
     let shape = layer.shapes[resizing.shapeIndex];
   
+    let minSize; // 最小サイズ
+    let maxSize; // 最大サイズ
+    let minWidth, maxWidth;
+    let minLength, maxLength;
     if (shape.type === 'awaji') {
-      shape.d = (p.mouseX-shape.x) * 2;
+      minSize = 30;
+      maxSize = 150;
+      shape.d = p.constrain((p.mouseX - shape.x) * 2, minSize, maxSize);
     } else if (shape.type === 'ume') {
-      shape.d = p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2;
+      minSize = 50;
+      maxSize = 250;
+      shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     } else if (shape.type === 'renzoku') {
-      shape.w = (p.mouseX - shape.x) * 2;
-      shape.l = (p.mouseY - shape.y) * 2;
+      minWidth = 30;
+      maxWidth = 150;
+      minLength = 50;
+      maxLength = 300;
+      shape.w = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
+      shape.l = p.constrain((p.mouseY - shape.y) * 2, minLength, maxLength);
     }
   }  
 
