@@ -508,13 +508,14 @@ let sketch1 = new p5((p) => {
       let availableSizes = Object.keys(params[type]).map(size => Number(size));
       // 初期値として最も近いサイズを最初の要素に設定
       let closestSize = availableSizes[0];
-      // 各サイズと比較して、cmSizeに最も近いサイズを探す
+      // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
       for (let i = 1; i < availableSizes.length; i++) {
         let currentSize = availableSizes[i];
-        // 現在のサイズが、これまでの最も近いサイズよりもcmSizeに近い場合は更新
-        if (Math.abs(currentSize - cmSize) < Math.abs(closestSize - cmSize)) {
-          closestSize = currentSize;
+        // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
+        if (currentSize > cmSize) {
+          break;
         }
+        closestSize = currentSize;
       }
 
       // 最も近いサイズに対応するパラメータを shape に適用
