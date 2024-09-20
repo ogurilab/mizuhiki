@@ -63,12 +63,18 @@ let sketch1 = new p5((p) => {
     canvas = p.createCanvas(800, 800);
     canvas.parent('canvas');
     
-    document.getElementById('add-ume-button').addEventListener('click', () => p.showSizeSelector('ume'));
-    document.getElementById('add-awaji-button').addEventListener('click', () => p.showSizeSelector('awaji'));
-    document.getElementById('add-renzoku-button').addEventListener('click', () => p.showSizeSelector('renzoku'));
+    // 'add-〇〇-button' 形式のすべてのボタンにイベントリスナーを追加
+    document.querySelectorAll('[id^="add-"][id$="-button"]').forEach(button => {
+      let shapeType = button.id.split('-')[1];  // '〇〇' の部分を取得
+      button.addEventListener('click', () => p.addNewShape(shapeType));
+    });
+
+    //document.getElementById('add-ume-button').addEventListener('click', () => p.showSizeSelector('ume'));
+    //document.getElementById('add-awaji-button').addEventListener('click', () => p.showSizeSelector('awaji'));
+    //document.getElementById('add-renzoku-button').addEventListener('click', () => p.showSizeSelector('renzoku'));
     document.getElementById('convert-button').addEventListener('click', p.convert);
     
-    p.setupSizeSelectors();
+    //p.setupSizeSelectors();
     p.setupShapesColorSelector();
     definePoints();
     
@@ -204,7 +210,7 @@ let sketch1 = new p5((p) => {
       }
     }
   }
-
+/*
   p.drawLabels = function () {
     // オフスクリーンバッファをクリア
     pg.clear();
@@ -253,7 +259,7 @@ let sketch1 = new p5((p) => {
     p.plane(p.width, p.height);
     p.pop();
   }
-
+*/
   //逆三角形の描画
   p.drawInvertedTriangle = function (x, y, d) {
     p.push();
@@ -270,7 +276,7 @@ let sketch1 = new p5((p) => {
     p.rect(x, y, w, l);
     p.pop();
   }
-
+/*
   //選択された図形の種類によってサイズ選択ボタンを表示・非表示にする
   p.showSizeSelector = function (type) {
     currentType = type;
@@ -322,6 +328,39 @@ let sketch1 = new p5((p) => {
     document.getElementById('awaji-size-selector').classList.add('hidden');
     document.getElementById('renzoku-size-selector').classList.add('hidden');
   }
+*/
+
+  //図形ボタンが押されたら一定のサイズで作成しpendingShapeに格納
+  p.addNewShape = function (type) {
+    let newShape;
+    if (type === 'renzoku') {
+      let shapeLength = 5 * 50; // 1cm = 50px と仮定
+      let shapeWidth = 2 * 50; 
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        w: shapeWidth,
+        l: shapeLength,
+        scale: Math.max(shapeLength, shapeWidth) / 500,
+        //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
+      };
+    } else if (type === 'awaji' || type === 'ume'){
+      let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        d: shapeDiameter,
+        scale: shapeDiameter / 300,
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      };
+    }
+
+    pendingShape = newShape;
+    selectedColor = null;
+    document.getElementById('color-selector').classList.remove('hidden');
+  }
 
   p.setupShapesColorSelector = function () {
     let colorSelector = document.getElementById('color-selector');
@@ -331,7 +370,7 @@ let sketch1 = new p5((p) => {
           selectedColor = button.getAttribute('data-color');
           colorSelector.classList.add('hidden');
           if (pendingShape) {
-            p.addNewShape();
+            p.addDecidedShape();
           }
         } else {// インナーカーブの色設定
           p.changeSelectedCurveColor(button.getAttribute('data-color'));
@@ -340,7 +379,7 @@ let sketch1 = new p5((p) => {
     });
   }
 
-  p.addNewShape = function () {
+  p.addDecidedShape = function () {
     if (pendingShape && selectedColor) {
         pendingShape.color = selectedColor;
         //pendingShape.innerCurveColor = selectedColor; // インナーカーブ用の色も設定
