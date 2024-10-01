@@ -15,7 +15,8 @@ let layerList;
 //let fixFrontButton;
 //let mode2D_f = 0;
 let compShapes = [];
-let sketch2;
+let sketch2, modalSketch;
+let partsSketches = [];
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
@@ -457,7 +458,7 @@ let sketch1 = new p5((p) => {
       //compShapes = layers.flatMap(layer => layer.shapes);
         
       // sketch2を再初期化
-      //initializeCompleteView();
+      //initializeTab2();
     }else if(!mode2D){
       p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       mode2D = true;
@@ -1128,7 +1129,16 @@ let sketch1 = new p5((p) => {
 
 let partsCanvas;
 
-function initializeCompleteView() {
+function initializeTab2() {
+  if (sketch2) {
+    console.log(sketch2);
+    sketch2.remove(); // タブ2のスケッチを削除
+    sketch2 = null; // スケッチ2の参照をクリア
+    partsSketches.forEach(sketch => {
+      sketch.remove();
+    });
+    partsSketches = [];
+  }
   // サイズ決定
   layers.forEach((layer) => {
     layer.shapes.forEach((shape) => {
@@ -1141,7 +1151,7 @@ function initializeCompleteView() {
         }
     });
   });    
-  
+
   const container = document.getElementById('complete-view-container');
   container.innerHTML = ''; // コンテナをクリア
 
@@ -1153,11 +1163,6 @@ function initializeCompleteView() {
   const canvasContainer = document.createElement('div');
   canvasContainer.id = 'canvas2';
   container.appendChild(canvasContainer);
-
-  // 既存のスケッチを削除
-  if (sketch2) {
-    sketch2.remove();
-  }
 
   // sketch2を初期化
   sketch2 = new p5((p) => {
@@ -1241,7 +1246,7 @@ function initializeCompleteView() {
       partsCanvasContainer.appendChild(canvasWrapper);
       
       // 新しいp5インスタンスを作成して個々のキャンバスに3Dモデルを描画
-      new p5((p) => {
+      const sketch = new p5((p) => {
         p.setup = function() {
           let canvas = p.createCanvas(250, 250, p.WEBGL);
           canvas.parent(canvasWrapper);
@@ -1250,9 +1255,10 @@ function initializeCompleteView() {
         p.draw = function() {
           p.background(250);
           p.orbitControl();
-          drawShape(p, shape, layerIndex, shapeIndex, -1, -1);  // 個別の形状を描画
+          drawShape(p, shape, layerIndex, shapeIndex, 1, -1);  // 個別の形状を描画
         }
       }, canvasWrapper);
+      partsSketches.push(sketch);
 
       // 「作成する」ボタンの追加
       const createButton = document.createElement('button');
@@ -1306,8 +1312,13 @@ function initializeCompleteView() {
           processText.textContent = `${processNo} / ${totalProcesses}`;
         }
 
+        // 既存のスケッチを削除
+        if (modalSketch) {
+          modalSketch.remove();
+          modalSketch = null;
+        }
         // キャンバスを生成し、モーダル内に追加
-        const sketch = new p5((p) => {
+        modalSketch = new p5((p) => {
           p.setup = function() {
             let canvas = p.createCanvas(400, 400, p.WEBGL);
             canvas.parent(modalCanvasContainer);
@@ -1329,7 +1340,7 @@ function initializeCompleteView() {
             processNo--;
             updateButtonStates();
             // キャンバスを再描画
-            sketch.redraw();
+            modalSketch.redraw();
           }
         });
 
@@ -1338,7 +1349,7 @@ function initializeCompleteView() {
             processNo++;
             updateButtonStates();
             // キャンバスを再描画
-            sketch.redraw();
+            modalSketch.redraw();
           }
         });
 
@@ -1359,9 +1370,9 @@ function initializeCompleteView() {
   });
 }
 
-// タブ切り替え時にinitializeCompleteViewを呼び出す
+// タブ切り替え時にinitializeTab1, 2を呼び出す
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('label[for="tab2"]').addEventListener('click', initializeCompleteView);
+  document.querySelector('label[for="tab2"]').addEventListener('click', initializeTab2);
 });
 
 /*完成図キャンバスの実装のみ
@@ -1406,9 +1417,7 @@ function drawAxis(p) {
 
 function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   p.push();
-  if (parts_f == -1) {
-    p.translate(30, 20, 0);
-  } else if (parts_f == 1) {
+  if (parts_f == 1) {
     p.translate(0, 0, 0);
   } else {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
