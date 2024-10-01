@@ -435,10 +435,10 @@ let sketch1 = new p5((p) => {
         layer.shapes.forEach((shape) => {
             if (shape.d) {
               shape.scale = shape.d/300;
-              p.decideSizeParameters(shape, shape.type, shape.d, 0, 0);
+              decideSizeParameters(shape, shape.type, shape.d, 0, 0);
             } else {
               shape.scale = Math.max(shape.l, shape.w) / 500;
-              p.decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
+              decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
             }
         });
       });    
@@ -489,85 +489,85 @@ let sketch1 = new p5((p) => {
       //translate(-width/2, -height/2);
     }
     }
-
-    p.decideSizeParameters = function (shape, type, circleDiameter, shapeWidth, shapeLength) {
-      let cmSize = circleDiameter / 50;
-      if (circleDiameter != 0) {
-        cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
-      } else {
-        cmSize = shapeLength / 50;
-      }
-
-      // デフォルトのパラメータ
-      let defaultParams = {
-        numInnerCurves: 4,
-        outerCurveWeight: 30,
-        innerCurveWeight: 6.5
-      };
-  
-      // モデルの種類ごとにパラメータを定義
-      let params = {
-        ume: {
-          1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
-          1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-          2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-          2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
-          3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
-          4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
-        },
-        awaji: {
-          1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
-          1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
-          2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
-          2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
-          3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
-        },
-        renzoku: {
-          2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
-          3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
-          4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-          5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
-        },
-        // その他のモデルが追加される場合はここに定義
-        other: {
-          1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
-          1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-          2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
-          2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
-          3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
-        }
-      };
-  
-      // 指定されたタイプが存在しない場合、デフォルトパラメータを適用
-      if (!params[type]) {
-        shape.numInnerCurves = defaultParams.numInnerCurves;
-        shape.outerCurveWeight = defaultParams.outerCurveWeight;
-        shape.innerCurveWeight = defaultParams.innerCurveWeight;
-        return;
-      }
-      // 使用可能なサイズキーを取得して、数値に変換
-      let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
-      // 初期値として最も近いサイズを最初の要素に設定
-      let closestSize = availableSizes[0];
-      // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
-      for (let i = 1; i < availableSizes.length; i++) {
-        let currentSize = availableSizes[i];
-        // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
-        if (currentSize > cmSize) {
-          break;
-        }
-        closestSize = currentSize;
-      }
-
-      // 最も近いサイズに対応するパラメータを shape に適用
-      let closestParams = params[type][closestSize];
-      shape.numInnerCurves = closestParams.numInnerCurves;
-      //shape.outerCurveWeight = closestParams.outerCurveWeight;
-      shape.innerCurveWeight = closestParams.innerCurveWeight;
-      shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
-      // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+/*
+  p.decideSizeParameters = function (shape, type, circleDiameter, shapeWidth, shapeLength) {
+    let cmSize = circleDiameter / 50;
+    if (circleDiameter != 0) {
+      cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
+    } else {
+      cmSize = shapeLength / 50;
     }
 
+    // デフォルトのパラメータ
+    let defaultParams = {
+      numInnerCurves: 4,
+      outerCurveWeight: 30,
+      innerCurveWeight: 6.5
+    };
+
+    // モデルの種類ごとにパラメータを定義
+    let params = {
+      ume: {
+        1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+        2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+        2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
+        3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
+        4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+      },
+      awaji: {
+        1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
+        2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
+        3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+      },
+      renzoku: {
+        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
+        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
+        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+      },
+      // その他のモデルが追加される場合はここに定義
+      other: {
+        1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+        2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
+        3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+      }
+    };
+
+    // 指定されたタイプが存在しない場合、デフォルトパラメータを適用
+    if (!params[type]) {
+      shape.numInnerCurves = defaultParams.numInnerCurves;
+      shape.outerCurveWeight = defaultParams.outerCurveWeight;
+      shape.innerCurveWeight = defaultParams.innerCurveWeight;
+      return;
+    }
+    // 使用可能なサイズキーを取得して、数値に変換
+    let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
+    // 初期値として最も近いサイズを最初の要素に設定
+    let closestSize = availableSizes[0];
+    // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
+    for (let i = 1; i < availableSizes.length; i++) {
+      let currentSize = availableSizes[i];
+      // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
+      if (currentSize > cmSize) {
+        break;
+      }
+      closestSize = currentSize;
+    }
+
+    // 最も近いサイズに対応するパラメータを shape に適用
+    let closestParams = params[type][closestSize];
+    shape.numInnerCurves = closestParams.numInnerCurves;
+    //shape.outerCurveWeight = closestParams.outerCurveWeight;
+    shape.innerCurveWeight = closestParams.innerCurveWeight;
+    shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
+    // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+  }*/
+/*
   p.getCurveParameters = function (type, circleDiameter, shapeLength, shapeWidth) {
     let cmSize = circleDiameter / 50;
     if (circleDiameter != 0) {
@@ -623,7 +623,7 @@ let sketch1 = new p5((p) => {
     // 該当するタイプとサイズのパラメータを返す
     return params[type][cmSize];
   }
-
+*/
   p.toggleFixedFrontView = function () {
     cameraFixed = !cameraFixed;
   }
@@ -1129,6 +1129,19 @@ let sketch1 = new p5((p) => {
 let partsCanvas;
 
 function initializeCompleteView() {
+  // サイズ決定
+  layers.forEach((layer) => {
+    layer.shapes.forEach((shape) => {
+        if (shape.d) {
+          shape.scale = shape.d/300;
+          decideSizeParameters(shape, shape.type, shape.d, 0, 0);
+        } else {
+          shape.scale = Math.max(shape.l, shape.w) / 500;
+          decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
+        }
+    });
+  });    
+  
   const container = document.getElementById('complete-view-container');
   container.innerHTML = ''; // コンテナをクリア
 
@@ -1748,4 +1761,82 @@ function createOffsetCurve(p, originalCurve, offset) {
       z: pt.z + normal.z * offset
     };
   });
+}
+
+function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLength) {
+  let cmSize = circleDiameter / 50;
+  if (circleDiameter != 0) {
+    cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
+  } else {
+    cmSize = shapeLength / 50;
+  }
+
+  // デフォルトのパラメータ
+  let defaultParams = {
+    numInnerCurves: 4,
+    outerCurveWeight: 30,
+    innerCurveWeight: 6.5
+  };
+
+  // モデルの種類ごとにパラメータを定義
+  let params = {
+    ume: {
+      1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
+      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+      2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+      2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
+      3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
+      4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+    },
+    awaji: {
+      1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
+      1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
+      2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
+      2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
+      3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+    },
+    renzoku: {
+      2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
+      3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
+      4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
+      5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+    },
+    // その他のモデルが追加される場合はここに定義
+    other: {
+      1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
+      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
+      2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
+      2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
+      3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+    }
+  };
+
+  // 指定されたタイプが存在しない場合、デフォルトパラメータを適用
+  if (!params[type]) {
+    shape.numInnerCurves = defaultParams.numInnerCurves;
+    shape.outerCurveWeight = defaultParams.outerCurveWeight;
+    shape.innerCurveWeight = defaultParams.innerCurveWeight;
+    return;
+  }
+  // 使用可能なサイズキーを取得して、数値に変換
+  let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
+  // 初期値として最も近いサイズを最初の要素に設定
+  let closestSize = availableSizes[0];
+  // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
+  for (let i = 1; i < availableSizes.length; i++) {
+    let currentSize = availableSizes[i];
+    // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
+    if (currentSize > cmSize) {
+      break;
+    }
+    closestSize = currentSize;
+  }
+
+  // 最も近いサイズに対応するパラメータを shape に適用
+  let closestParams = params[type][closestSize];
+  shape.numInnerCurves = closestParams.numInnerCurves;
+  //shape.outerCurveWeight = closestParams.outerCurveWeight;
+  shape.innerCurveWeight = closestParams.innerCurveWeight;
+  shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
+  // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
 }
