@@ -178,7 +178,7 @@ let sketch1 = new p5((p) => {
       });    
       
       if (cameraFixed) {
-        p.drawLabels();
+        //p.drawLabels();
       }
       
       // ハイライトの描画
@@ -506,11 +506,12 @@ let sketch1 = new p5((p) => {
       // モデルの種類ごとにパラメータを定義
       let params = {
         ume: {
+          1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
           1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
           2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
           2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
           3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
-          4: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+          4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
         },
         awaji: {
           1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
@@ -542,9 +543,8 @@ let sketch1 = new p5((p) => {
         shape.innerCurveWeight = defaultParams.innerCurveWeight;
         return;
       }
-
       // 使用可能なサイズキーを取得して、数値に変換
-      let availableSizes = Object.keys(params[type]).map(size => Number(size));
+      let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
       // 初期値として最も近いサイズを最初の要素に設定
       let closestSize = availableSizes[0];
       // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
@@ -560,9 +560,10 @@ let sketch1 = new p5((p) => {
       // 最も近いサイズに対応するパラメータを shape に適用
       let closestParams = params[type][closestSize];
       shape.numInnerCurves = closestParams.numInnerCurves;
-      shape.outerCurveWeight = closestParams.outerCurveWeight;
+      //shape.outerCurveWeight = closestParams.outerCurveWeight;
       shape.innerCurveWeight = closestParams.innerCurveWeight;
-      //console.log(shape.numInnerCurves, shape.outerCurveWeight);
+      shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
+      // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
     }
 
   p.getCurveParameters = function (type, circleDiameter, shapeLength, shapeWidth) {
@@ -870,7 +871,7 @@ let sketch1 = new p5((p) => {
       shape.d = p.constrain((p.mouseX - shape.x) * 2, minSize, maxSize);
     } else if (shape.type === 'ume') {
       minSize = 50;
-      maxSize = 250;
+      maxSize = 200;
       shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     } else if (shape.type === 'renzoku') {
       minWidth = 30;
