@@ -422,7 +422,8 @@ let sketch1 = new p5((p) => {
       
       document.getElementById('add-button-container').classList.add('hidden');
       document.getElementById('color-selector').classList.remove('hidden');
-      document.getElementById('color-option').classList.remove('hidden');
+      document.getElementById('color-label').classList.remove('hidden');
+      //document.getElementById('color-option').classList.remove('hidden');
       
       // 正面固定ボタンを追加
       fixFrontButton = p.createButton('2D <~> 3D');
@@ -466,7 +467,8 @@ let sketch1 = new p5((p) => {
       
       document.getElementById('add-button-container').classList.remove('hidden');
       document.getElementById('color-selector').classList.add('hidden');
-      document.getElementById('color-option').classList.add('hidden');
+      document.getElementById('color-label').classList.add('hidden');
+      //document.getElementById('color-option').classList.add('hidden');
       
       // 正面固定ボタンを削除
       if (fixFrontButton) {
@@ -1130,6 +1132,10 @@ function initializeCompleteView() {
   const container = document.getElementById('complete-view-container');
   container.innerHTML = ''; // コンテナをクリア
 
+  const completeContent = document.createElement('h1');
+  completeContent.textContent = '完成図';
+  container.appendChild(completeContent);
+
   // キャンバスコンテナを追加
   const canvasContainer = document.createElement('div');
   canvasContainer.id = 'canvas2';
@@ -1152,10 +1158,11 @@ function initializeCompleteView() {
       p.background(250);
       drawAxis(p);
       p.orbitControl();
-      
+      /*
       for (let i = compShapes.length - 1; i >= 0; i--) {
-        //drawShape(p, compShapes[i], i);
+        drawShape(p, compShapes[i], i);
       }
+      */
       let indexCounter = 0;
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, shapeIndex) => {
