@@ -1453,7 +1453,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     } else {// 設定してなければ図形の色で
       color=shape.color;
     }
-    
+
     if (typeof color === 'string') {
       p.stroke(color);
     } else {
@@ -1861,7 +1861,7 @@ function getMaterialColor (){
   let j = 0;
   layers.forEach((layer, layerIndex) => {
     layer.shapes.forEach((shape, shapeIndex) => {
-      for (let i = 0; i < innerCurvesData[layerIndex][shapeIndex].length; i++) {
+      for (let i = 0; i < shape.numInnerCurves; i++) {
         let color;
         if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {
           color = innerCurvesData[layerIndex][shapeIndex][i].color;
@@ -1869,7 +1869,7 @@ function getMaterialColor (){
           color=shape.color;
         }
         material[j] = {
-          color: innerCurvesData[layerIndex][shapeIndex][i].color, // color情報
+          color: color, // color情報
           cm: shape.materialCm // cm情報
         };
         j++;
