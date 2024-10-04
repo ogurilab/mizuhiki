@@ -509,33 +509,33 @@ let sketch1 = new p5((p) => {
     // モデルの種類ごとにパラメータを定義
     let params = {
       ume: {
-        1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
-        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-        2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-        2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
-        3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
-        4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+        1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 30 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+        2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 30 },
+        2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 , materialCm: 30 },
+        3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 },
+        4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
       },
       awaji: {
-        1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
-        1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
-        2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
-        2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
-        3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+        1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 , materialCm: 30 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 , materialCm: 30 },
+        2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 30 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 },
+        3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
       },
       renzoku: {
-        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
-        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
-        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 30 },
+        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 30 },
+        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 30 },
+        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 30 }
       },
       // その他のモデルが追加される場合はここに定義
       other: {
-        1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
-        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-        2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
-        2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
-        3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+        1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 , materialCm: 30 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+        2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 , materialCm: 30 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 , materialCm: 30 },
+        3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 , materialCm: 30 }
       }
     };
 
@@ -587,32 +587,32 @@ let sketch1 = new p5((p) => {
     // モデルの種類ごとにパラメータを定義
     let params = {
       ume: {
-        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-        2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-        2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
-        3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
-        4: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+        2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 30 },
+        2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 , materialCm: 30 },
+        3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 },
+        4: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
       },
       awaji: {
-        1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
-        1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
-        2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
-        2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
-        3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+        1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 , materialCm: 30 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 , materialCm: 30 },
+        2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 30 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 },
+        3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
       },
       renzoku: {
-        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
-        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
-        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+        2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 30 },
+        3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 30 },
+        4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 30 },
+        5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 30 }
       },
       // その他のモデルが追加される場合はここに定義
       other: {
-        1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
-        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-        2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
-        2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
-        3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+        1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 , materialCm: 30 },
+        1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+        2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 , materialCm: 30 },
+        2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 , materialCm: 30 },
+        3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 , materialCm: 30 }
       }
     };
 
@@ -870,7 +870,7 @@ let sketch1 = new p5((p) => {
     let minLength, maxLength;
     if (shape.type === 'awaji') {
       minSize = 30;
-      maxSize = 150;
+      maxSize = 200;
       shape.d = p.constrain((p.mouseX - shape.x) * 2, minSize, maxSize);
     } else if (shape.type === 'ume') {
       minSize = 50;
@@ -1368,6 +1368,9 @@ function initializeTab2() {
       }
     });
   });
+
+  // リストを更新
+  updateMaterialsList();
 }
 
 // タブ切り替え時にinitializeTab1, 2を呼び出す
@@ -1445,9 +1448,9 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   let shapeInnerCurves = [];
   for (let i = 0; i < innerCurves.length; i++) {
     let color;
-    if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {
+    if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {// インナーカーブに色が設定してあれば
       color = innerCurvesData[layerIndex][shapeIndex][i].color;
-    } else {
+    } else {// 設定してなければ図形の色で
       color=shape.color;
     }
     
@@ -1790,33 +1793,34 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   // モデルの種類ごとにパラメータを定義
   let params = {
     ume: {
-      1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 },
-      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-      2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-      2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 },
-      3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 },
-      4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 }
+      1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 23},
+      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+      2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
+      2.8: { numInnerCurves: 4, outerCurveWeight: 26, innerCurveWeight: 5 , materialCm: 45 },
+      3.3: { numInnerCurves: 5, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 45 },
+      4.0: { numInnerCurves: 6, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 45 }
     },
     awaji: {
-      1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 },
-      1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 },
-      2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 },
-      2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 },
-      3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 }
+      1: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 , materialCm: 23 },
+      1.5: { numInnerCurves: 2, outerCurveWeight: 19, innerCurveWeight: 5 , materialCm: 23 },
+      2: { numInnerCurves: 3, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 23 },
+      2.5: { numInnerCurves: 4, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 23 },
+      3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 23 },
+      3.5: { numInnerCurves: 6, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
     },
     renzoku: {
-      2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 },
-      3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 },
-      4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 },
-      5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 }
+      2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 23 },
+      3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 45 },
+      4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
+      5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 }
     },
     // その他のモデルが追加される場合はここに定義
     other: {
-      1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 },
-      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 },
-      2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 },
-      2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 },
-      3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 }
+      1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 , materialCm: 30 },
+      1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+      2: { numInnerCurves: 3, outerCurveWeight: 24, innerCurveWeight: 5 , materialCm: 30 },
+      2.5: { numInnerCurves: 4, outerCurveWeight: 28, innerCurveWeight: 5 , materialCm: 30 },
+      3: { numInnerCurves: 5, outerCurveWeight: 32, innerCurveWeight: 5 , materialCm: 30 }
     }
   };
 
@@ -1848,4 +1852,83 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   shape.innerCurveWeight = closestParams.innerCurveWeight;
   shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
   // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+
+  shape.materialCm = closestParams.materialCm;
+}
+
+function getMaterialColor (){
+  let material = []
+  let j = 0;
+  layers.forEach((layer, layerIndex) => {
+    layer.shapes.forEach((shape, shapeIndex) => {
+      for (let i = 0; i < innerCurvesData[layerIndex][shapeIndex].length; i++) {
+        let color;
+        if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {
+          color = innerCurvesData[layerIndex][shapeIndex][i].color;
+        } else {
+          color=shape.color;
+        }
+        material[j] = {
+          color: innerCurvesData[layerIndex][shapeIndex][i].color, // color情報
+          cm: shape.materialCm // cm情報
+        };
+        j++;
+      }
+    });
+  });
+  console.log(material);
+  let materialz = {}; // materialz の初期化
+
+  // material をループ
+  for (let i = 0; i < material.length; i++) {
+    const { color, cm } = material[i]; // material[i] の color と cm を取得
+
+    // materialz[color] が未定義なら初期化
+    if (!materialz[color]) {
+      materialz[color] = {};
+    }
+
+    // materialz[color][cm] が未定義なら初期化
+    if (!materialz[color][cm]) {
+      materialz[color][cm] = { num: 0 }; // num を 0 で初期化
+    }
+
+    // num のカウントを増やす
+    materialz[color][cm].num += 1;
+  }
+
+  // 結果を確認
+  console.log(materialz);
+  return materialz;
+}
+
+// `materialz` をもとに `<ul id="materials-list">` にリスト項目を追加する関数
+function updateMaterialsList() {
+  const materialsList = document.getElementById('materials-list'); // <ul> 要素を取得
+
+  // 一度クリアする（すでにある要素を削除）
+  materialsList.innerHTML = '';
+
+  let material = getMaterialColor();
+
+  // material の各 color, cm, num をループ
+  for (let color in material) {
+    for (let cm in material[color]) {
+      const num = material[color][cm].num;
+
+      // <li> 要素を作成
+      const listItem = document.createElement('li');
+      // 色のボックスを作成
+      const colorBox = document.createElement('span');
+      colorBox.classList.add('color-box');
+      colorBox.style.backgroundColor = color;
+      const textSpan = document.createElement('span');
+      textSpan.textContent = `${cm}cm, ${num}本`;
+
+      // <ul> に <li> を追加
+      listItem.appendChild(colorBox);
+      listItem.appendChild(textSpan);
+      materialsList.appendChild(listItem);
+    }
+  }
 }

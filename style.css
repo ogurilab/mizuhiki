@@ -374,3 +374,11 @@ h1 {
   padding: 5px 10px;
   border-radius: 5px;
 }
+
+.color-box {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border: 1px solid #000;
+}
