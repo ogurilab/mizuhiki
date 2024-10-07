@@ -17,6 +17,7 @@ let layerList;
 let compShapes = [];
 let sketch2, modalSketch;
 let partsSketches = [];
+let selectedCurveIndex;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
@@ -59,6 +60,9 @@ let sketch1 = new p5((p) => {
   let pendingShape = null;
   let resizeCornerSize = 10;
   let resizing = null;
+  let selectedShapeIndex = -1;
+  let selectedLayerIndex = -1;
+  let selectedcustomizeShape = null;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -140,11 +144,32 @@ let sketch1 = new p5((p) => {
       if (resizing) {
         p.resizeShape(resizing);
       }
-      // ハイライトの描画
+      // マウスオーバー時ハイライトの描画
       if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
         const layer = layers[highlightedLayerIndex];
         try {
           const shape = layer.shapes[highlightedShapeIndex];
+          p.noFill();
+          p.stroke(0, 255, 0);
+          p.strokeWeight(4);
+          if (shape.d){
+            p.ellipse(shape.x, shape.y, shape.d + 20);
+          } else {
+            if (shape.w > shape.l){
+              p.ellipse(shape.x, shape.y, shape.w + 20);
+            } else {
+              p.ellipse(shape.x, shape.y, shape.l + 20);
+            }
+          }
+        } catch (error) { // レイヤー変換の一瞬エラーが出るため
+          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+        }
+      }
+      // 図形選択ハイライトの描画
+      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
+        const layer = layers[selectedLayerIndex];
+        try {
+          const shape = layer.shapes[selectedShapeIndex];
           p.noFill();
           p.stroke(255, 0, 0);
           p.strokeWeight(4);
@@ -158,7 +183,7 @@ let sketch1 = new p5((p) => {
             }
           }
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
-          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+          console.error('Shape or Layer not found for indices:', selectedLayerIndex, selectedShapeIndex);
         }
       }
       p.pop();
@@ -182,11 +207,38 @@ let sketch1 = new p5((p) => {
         //p.drawLabels();
       }
       
-      // ハイライトの描画
+      // マウスオーバー時ハイライトの描画
       if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
         const layer = layers[highlightedLayerIndex];
         try {
           const shape = layer.shapes[highlightedShapeIndex];
+          p.push();
+          p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex + 1);
+          p.noFill();
+          p.stroke(0, 255, 0);
+          p.strokeWeight(4);
+          
+          // ellipseを使用して円を描画
+          if (shape.d){
+            p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
+          } else {
+            if (shape.w > shape.l){
+              p.ellipse(0, 0, shape.w * 1.1, shape.w * 1.1);
+            } else {
+              p.ellipse(0, 0, shape.l * 1.1, shape.l * 1.1);
+            }
+          }
+          p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
+          p.pop();
+        } catch (error) { // レイヤー変換の一瞬エラーが出るため
+          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+        }
+      }
+      // 図形選択ハイライトの描画
+      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
+        const layer = layers[selectedLayerIndex];
+        try {
+          const shape = layer.shapes[selectedShapeIndex];
           p.push();
           p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex + 1);
           p.noFill();
@@ -206,7 +258,7 @@ let sketch1 = new p5((p) => {
           p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
           p.pop();
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
-          console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
+          console.error('Shape or Layer not found for indices:', selectedLayerIndex, selectedShapeIndex);
         }
       }
     }
@@ -367,14 +419,25 @@ let sketch1 = new p5((p) => {
     let colorSelector = document.getElementById('color-selector');
     colorSelector.querySelectorAll('.color-option').forEach(button => {
       button.addEventListener('click', () => {
+        selectedColor = button.getAttribute('data-color');
         if (mode2D == true) {// 図景全体の色設定
-          selectedColor = button.getAttribute('data-color');
           colorSelector.classList.add('hidden');
           if (pendingShape) {
             p.addDecidedShape();
           }
-        } else {// インナーカーブの色設定
+        } else if (selectedCurve && selectedcustomizeShape) {
+          console.log('ok');
+          // 選択されたカーブに色を適用
+          let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+          innerCurvesData[layerIndex][shapeIndex][curveIndex].color = selectedColor;
+          
           p.changeSelectedCurveColor(button.getAttribute('data-color'));
+          
+          // カーブ番号の選択をリセット
+          selectedCurve = null;
+          nowKey = null;
+        } else {// インナーカーブの色設定
+          //p.changeSelectedCurveColor(button.getAttribute('data-color'));
         }
       });
     });
@@ -422,7 +485,7 @@ let sketch1 = new p5((p) => {
       canvas.parent('canvas');
       
       document.getElementById('add-button-container').classList.add('hidden');
-      document.getElementById('color-selector').classList.remove('hidden');
+      //document.getElementById('color-selector').classList.remove('hidden');
       document.getElementById('color-label').classList.remove('hidden');
       //document.getElementById('color-option').classList.remove('hidden');
       
@@ -442,7 +505,7 @@ let sketch1 = new p5((p) => {
               decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
             }
         });
-      });    
+      });
 
       // zIndexを設定
       /*
@@ -629,6 +692,40 @@ let sketch1 = new p5((p) => {
     cameraFixed = !cameraFixed;
   }
 
+  p.selectCurve = function (layerIndex, shapeIndex) {
+    if (!mode2D) {
+      p.keyPressed = function() {
+        if (selectedcustomizeShape && p.key >= '0' && p.key <= '9') {
+          if (nowKey) {
+            p.changeSelectedCurveColor(originalColor);
+          }
+          nowKey = p.key;
+          curveIndex = p.key;
+          selectedCurve = { layerIndex: layerIndex, shapeIndex: shapeIndex, curveIndex: curveIndex };
+          //console.log("Selected curve:", selectedCurve);
+          // 元の色を保存
+          originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
+          p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
+        } else if (p.key >= '0' && p.key <= '9') {
+          // 他のキーが押された場合、選択を解除して色を元に戻す
+          if (selectedCurve) {
+            let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
+            innerCurvesData[layerIndex][shapeIndex][curveIndex].color = originalColor;
+            
+            // 色を元に戻す
+            p.changeSelectedCurveColor(originalColor);
+            
+            // 選択解除
+            originalColor = null;
+            nowKey = null;
+            selectedCurve = null;
+            //console.log('Curve selection canceled.');
+          }
+        }
+      }
+    }
+  }
+/*
   p.keyPressed = function () {
     if (!mode2D && cameraFixed) {
       if (p.key === 'c' || p.key === 'C') {
@@ -686,7 +783,7 @@ let sketch1 = new p5((p) => {
       }
     }
   }
-  
+  */
   /*
   function mouseClicked() {
     if (!mode2D && cameraFixed) {
@@ -771,6 +868,7 @@ let sketch1 = new p5((p) => {
   }
 
   p.mousePressed = function () {
+    // リサイズ処理
     for (let layerIndex = layers.length - 1; layerIndex >= 0; layerIndex--) {
       let layer = layers[layerIndex];
       for (let shapeIndex = layer.shapes.length - 1; shapeIndex >= 0; shapeIndex--) {
@@ -853,11 +951,15 @@ let sketch1 = new p5((p) => {
   }
   
   p.mouseReleased = function () {
+    // リサイズ処理
     if (resizing) {
       resizing = null;
     }
-    selectedShape = null;
-    selectedLayerIndex = -1;
+    // 図形移動
+    if (mode2D) {
+      selectedShape = null;
+      selectedLayerIndex = -1;
+    }
   }
 
   p.resizeShape = function (resizing) {
@@ -935,6 +1037,21 @@ let sketch1 = new p5((p) => {
           //p.redraw();
         });
 
+        shapeItem.addEventListener('click', () => {
+          //event.stopPropagation();  // 他のクリックイベントが発生しないようにする
+          const shapeItems = shapeList.querySelectorAll('.shape-item');
+          const dynamicIndex = Array.from(shapeItems).indexOf(shapeItem);
+        
+          // クリックされた図形のインデックスを取得
+          const layerIndexOfShape = layers.findIndex(layer => layer.shapes.includes(shape));
+
+          // クリックされた図形を選択状態に設定
+          selectedShapeIndex = dynamicIndex;
+          selectedLayerIndex = layerIndexOfShape;
+          // 図形を選択、カスタマイズ可能に
+          p.customizeShape(layerIndexOfShape, dynamicIndex);
+        });
+        
         shapeList.appendChild(shapeItem);
       });
 
@@ -1125,6 +1242,37 @@ let sketch1 = new p5((p) => {
       zOffset += 8;
     });
   }
+
+  p.customizeShape = function (layerIndex, shapeIndex) {
+    selectedcustomizeShape = layers[layerIndex].shapes[shapeIndex];
+    //console.log(selectedcustomizeShape);
+
+    if (!mode2D) {
+      document.getElementById('color-selector').classList.remove('hidden');
+      document.getElementById('color-label').classList.remove('hidden');
+      p.selectCurve(layerIndex, shapeIndex);
+    }
+  }
+
+  // レイヤーリスト外をクリックした時、図形の選択解除
+  p.documentClickHandler = function() {
+    document.addEventListener('click', (event) => {
+      let colorSelector = document.getElementById('color-selector');
+      // クリックされたのがshapeItemでなければ選択解除
+      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
+        // クリックされた場所がレイヤーリスト以外か確認
+        if (!layerList.contains(event.target) && !colorSelector.contains(event.target)) {
+            selectedShapeIndex = -1;
+            selectedLayerIndex = -1;
+
+            selectedcustomizeShape = null;
+          if (!mode2D){// カラー選択を非表示に
+            colorSelector.classList.add('hidden');
+          }
+        }
+      }
+    });
+  };
 }, 'canvas');
 
 let partsCanvas;
@@ -1139,7 +1287,7 @@ function initializeTab2() {
     });
     partsSketches = [];
   }
-  // サイズ決定
+  // サイズ決定(変換もしていない場合に必要)
   layers.forEach((layer) => {
     layer.shapes.forEach((shape) => {
         if (shape.d) {
