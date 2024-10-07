@@ -97,6 +97,8 @@ let sketch1 = new p5((p) => {
       isLayerManipulating = false;
     });
 
+    p.documentClickHandler();
+
     // レイヤーリストの初期化
     p.updateLayerList();
   }
