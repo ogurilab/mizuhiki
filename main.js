@@ -999,12 +999,22 @@ let sketch1 = new p5((p) => {
       maxSize = 200;
       shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     } else if (shape.type === 'renzoku') {
-      minWidth = 30;
+      minWidth = 40;
       maxWidth = 150;
-      minLength = 50;
-      maxLength = 300;
-      shape.w = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
-      shape.l = p.constrain((p.mouseY - shape.y) * 2, minLength, maxLength);
+      minLength = 70;
+      maxLength = 400;
+      // 現在のサイズを一時的に取得
+      let newWidth = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
+      let newLength = p.constrain((p.mouseY - shape.y) * 2, minLength, maxLength);
+      
+      // 幅と高さの差を計算
+      let sizeDifference = newLength - newWidth;
+
+        // 差が閾値以内の場合のみサイズを更新
+        if (sizeDifference >= 20) {
+          shape.w = newWidth;
+          shape.l = newLength;
+      }
     }
   }  
 
@@ -1612,8 +1622,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
     p.rotateZ(p.radians(shape.rotation));
   }
-  let scaleValue = shape.scale * 1.62;
-  p.scale(scaleValue);
+  let scaleValue = shape.scale * 1.62;// 初期値
   //console.log(shape.x, shape.y); 
   let points;
   if (processNo == -1) {
@@ -1622,11 +1631,14 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     } else if (shape.type === 'ume') {
       points = ume_points;
     } else if (shape.type === 'renzoku') {
-      points = renzokuAwaji(3);//何連続か
+      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.7, 0.6]; // インデックス0は使用しない
+      scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+      points = renzokuAwaji(shape.renzokuNum);//何連続か
     }
   } else {
     points = getProcessPoints(shape.type, processNo);
   }
+  p.scale(scaleValue);
   
   let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
 
@@ -1906,6 +1918,20 @@ function renzokuAwaji(n) {
     });
     
   }
+
+  // 最上部と最下部のy座標を取得市、中心点を計算
+  let yValues = points.map(point => point.y);
+  let maxY = Math.max(...yValues);
+  let minY = Math.min(...yValues);
+  let centerY = (maxY + minY) / 2;
+
+  // 図形を中心に合わせるためにオフセットを計算
+  const offsetY = centerY;
+
+  // 全てのポイントのy座標をoffsetYだけ減少させる
+  points = points.map(point => {
+    return { x: point.x, y: point.y - offsetY, z: point.z };
+  });
   return points;
 }
 
@@ -1965,11 +1991,12 @@ function createOffsetCurve(p, originalCurve, offset) {
 }
 
 function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLength) {
-  let cmSize = circleDiameter / 50;
+  let cmSize = null, cmWidth = null, cmLength = null;
   if (circleDiameter != 0) {
     cmSize = circleDiameter / 50; // ピクセルをセンチメートルに変換
   } else {
-    cmSize = shapeLength / 50;
+    cmWidth = shapeWidth / 50;
+    cmLength = shapeLength /  50;
   }
 
   // デフォルトのパラメータ
@@ -1998,10 +2025,11 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
       3.5: { numInnerCurves: 6, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
     },
     renzoku: {
-      2: { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 23 },
-      3.3: { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 45 },
-      4: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
-      5.5: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 }
+      '1-2': { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 23 },
+      '1.5-3.3': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 45 },
+      '2-4': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
+      '2.5-5.5': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 },
+      '3-5.6': { numInnerCurves: 5, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 }
     },
     // その他のモデルが追加される場合はここに定義
     other: {
@@ -2020,28 +2048,78 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     shape.innerCurveWeight = defaultParams.innerCurveWeight;
     return;
   }
-  // 使用可能なサイズキーを取得して、数値に変換
-  let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
-  // 初期値として最も近いサイズを最初の要素に設定
-  let closestSize = availableSizes[0];
-  // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
-  for (let i = 1; i < availableSizes.length; i++) {
-    let currentSize = availableSizes[i];
-    // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
-    if (currentSize > cmSize) {
-      break;
+
+  if (type === 'renzoku') {
+    let sizeDifference = Math.abs(shapeWidth - shapeLength);
+    if (sizeDifference >= 350) {
+      shape.renzokuNum = 8;
+    } else if (sizeDifference >= 320) {
+      shape.renzokuNum = 7;
+    } else if (sizeDifference >= 280) {
+      shape.renzokuNum = 6;
+    } else if (sizeDifference >= 230) {
+      shape.renzokuNum = 5;
+    } else if (sizeDifference >= 180) {
+      shape.renzokuNum = 4;
+    } else if (sizeDifference >= 130) {
+      shape.renzokuNum = 3;
+    } else {
+      shape.renzokuNum = 2;
     }
-    closestSize = currentSize;
   }
 
+  let closestParams, closestSize;
+  if (cmSize) {
+    // 使用可能なサイズキーを取得して、数値に変換
+    let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
+    // 初期値として最も近いサイズを最初の要素に設定
+    closestSize = availableSizes[0];
+    // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
+    for (let i = 1; i < availableSizes.length; i++) {
+      let currentSize = availableSizes[i];
+      // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
+      if (currentSize > cmSize) {
+        break;
+      }
+      closestSize = currentSize;
+    }
   // 最も近いサイズに対応するパラメータを shape に適用
-  let closestParams = params[type][closestSize];
+  closestParams = params[type][closestSize];
+    //console.log(closestParams);
+  } else {// 使用可能なサイズキーを取得して、幅と高さに分解し、数値に変換
+    let availableKeys = Object.keys(params.renzoku);
+    let closestKey = availableKeys[0];
+    let minDifference = Infinity;
+    
+    // 各キーを比較して、誤差の合計が最小のキーを探す
+    for (let i = 0; i < availableKeys.length; i++) {
+      let currentKey = availableKeys[i];
+      let [widthKey, lengthKey] = currentKey.split('-').map(Number);
+    
+      let widthDifference = Math.abs(widthKey - cmWidth);
+      let lengthDifference = Math.abs(lengthKey - cmLength);
+    
+      // 誤差の合計を計算
+      let totalDifference = widthDifference + lengthDifference;
+    
+      // 最も小さい誤差のキーを探す
+      if (totalDifference < minDifference) {
+        minDifference = totalDifference;
+        closestKey = currentKey;
+      }
+    }
+    closestParams = params[type][closestKey];
+  }
+
   shape.numInnerCurves = closestParams.numInnerCurves;
   //shape.outerCurveWeight = closestParams.outerCurveWeight;
   shape.innerCurveWeight = closestParams.innerCurveWeight;
+  if(cmSize){
   shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
   // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
-
+  }else{
+    shape.outerCurveWeight = (cmWidth + cmLength) / 2 * 6; 
+  }
   shape.materialCm = closestParams.materialCm;
 }
 
