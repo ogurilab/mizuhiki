@@ -1609,8 +1609,8 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   if (parts_f == 1) {
     p.translate(0, 0, 0);
   } else {
-    p.rotateZ(p.radians(shape.rotation));
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
+    p.rotateZ(p.radians(shape.rotation));
   }
   let scaleValue = shape.scale * 1.62;
   p.scale(scaleValue);
