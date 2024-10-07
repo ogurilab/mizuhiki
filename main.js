@@ -50,6 +50,7 @@ let sketch1 = new p5((p) => {
   let nowIndexKey = -1;
   let originalColor = null;
   let selectedShape = null;
+  let selectedLayerIndex = null;
   let fixFrontButton;
   let mode2D_f = 0;
   let pg;
@@ -60,8 +61,11 @@ let sketch1 = new p5((p) => {
   let pendingShape = null;
   let resizeCornerSize = 10;
   let resizing = null;
-  let selectedShapeIndex = -1;
-  let selectedLayerIndex = -1;
+  let angle = 0; // 回転角度の初期値
+  let previousMouseX; // 前のマウスのX座標
+  let slider; // スライダーの変数
+  let customizeShapeIndex = -1;
+  let customizeLayerIndex = -1;
   let selectedcustomizeShape = null;
 
   p.setup = function() {
@@ -98,6 +102,7 @@ let sketch1 = new p5((p) => {
     });
 
     p.documentClickHandler();
+    p.setupRotationSlider();
 
     // レイヤーリストの初期化
     p.updateLayerList();
@@ -114,6 +119,16 @@ let sketch1 = new p5((p) => {
       }
       layers.forEach(layer => {
         layer.shapes.forEach(shape => {
+          //angle = p.radians(slider.value()); // スライダーの値をラジアンに変換
+          
+          // 各図形の描画
+          //p.rotate(angle); // 回転を適用
+          //p.rotate(p.radians(shape.rotation || 0)); // 回転度に基づいて回転
+
+          p.push();
+          p.translate(shape.x, shape.y);
+          p.rotate(p.radians(shape.rotation));
+    
           // 各図形の描画
           if (shape.color) {
             p.fill(shape.color);
@@ -123,23 +138,24 @@ let sketch1 = new p5((p) => {
           }
           if (shape.type === 'awaji') {
             //p.fill(165, 42, 42, 100);
-            p.drawInvertedTriangle(shape.x, shape.y, shape.d);
+            p.drawInvertedTriangle(0, 0, shape.d);
             //console.log(shape.x, shape.y, shape.d);
             // 逆三角形の右上の頂点にリサイズコーナーを配置
-            let cornerX = shape.x + shape.d / 2;
-            let cornerY = shape.y - shape.d / 2;
+            let cornerX =shape.d / 2;
+            let cornerY =-shape.d / 2;
             p.rect(cornerX - resizeCornerSize / 2, cornerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'ume') {
             //p.fill(165, 42, 42, 100);
-            p.ellipse(shape.x, shape.y, shape.d);
-            let markerX = shape.x + shape.d/2 * p.cos(p.QUARTER_PI);  // QUARTER_PI=45度
-            let markerY = shape.y + shape.d/2 * p.sin(p.QUARTER_PI);
+            p.ellipse(0, 0, shape.d);
+            let markerX =shape.d/2 * p.cos(p.QUARTER_PI);  // QUARTER_PI=45度
+            let markerY =shape.d/2 * p.sin(p.QUARTER_PI);
             p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'renzoku') {
             //p.fill(165, 42, 42, 100);
-            p.drawRenzokuawaji(shape.x, shape.y, shape.w, shape.l);
-            p.rect(shape.x + shape.w/2 - resizeCornerSize/2, shape.y + shape.l/2 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
+            p.drawRenzokuawaji(0, 0, shape.w, shape.l);
+            p.rect(shape.w/2 - resizeCornerSize/2, shape.l/2 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
           }
+          p.pop();
         });
       });
       // サイズを変更する処理
@@ -168,10 +184,10 @@ let sketch1 = new p5((p) => {
         }
       }
       // 図形選択ハイライトの描画
-      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
-        const layer = layers[selectedLayerIndex];
+      if (customizeShapeIndex !== -1 && customizeLayerIndex !== -1) {
+        const layer = layers[customizeLayerIndex];
         try {
-          const shape = layer.shapes[selectedShapeIndex];
+          const shape = layer.shapes[customizeShapeIndex];
           p.noFill();
           p.stroke(255, 0, 0);
           p.strokeWeight(4);
@@ -185,7 +201,7 @@ let sketch1 = new p5((p) => {
             }
           }
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
-          console.error('Shape or Layer not found for indices:', selectedLayerIndex, selectedShapeIndex);
+          console.error('Shape or Layer not found for indices:', customizeLayerIndex, customizeShapeIndex);
         }
       }
       p.pop();
@@ -237,10 +253,10 @@ let sketch1 = new p5((p) => {
         }
       }
       // 図形選択ハイライトの描画
-      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
-        const layer = layers[selectedLayerIndex];
+      if (customizeShapeIndex !== -1 && customizeLayerIndex !== -1) {
+        const layer = layers[customizeLayerIndex];
         try {
-          const shape = layer.shapes[selectedShapeIndex];
+          const shape = layer.shapes[customizeShapeIndex];
           p.push();
           p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex + 1);
           p.noFill();
@@ -260,7 +276,7 @@ let sketch1 = new p5((p) => {
           p.ellipse(0, 0, shape.d * 1.1, shape.d * 1.1);
           p.pop();
         } catch (error) { // レイヤー変換の一瞬エラーが出るため
-          console.error('Shape or Layer not found for indices:', selectedLayerIndex, selectedShapeIndex);
+          console.error('Shape or Layer not found for indices:', customizeLayerIndex, customizeShapeIndex);
         }
       }
     }
@@ -398,6 +414,7 @@ let sketch1 = new p5((p) => {
         w: shapeWidth,
         l: shapeLength,
         scale: Math.max(shapeLength, shapeWidth) / 500,
+        rotation: 0,
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else if (type === 'awaji' || type === 'ume'){
@@ -408,6 +425,7 @@ let sketch1 = new p5((p) => {
         y: p.height/2,
         d: shapeDiameter,
         scale: shapeDiameter / 300,
+        rotation: 0,
         //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
     }
@@ -1048,8 +1066,8 @@ let sketch1 = new p5((p) => {
           const layerIndexOfShape = layers.findIndex(layer => layer.shapes.includes(shape));
 
           // クリックされた図形を選択状態に設定
-          selectedShapeIndex = dynamicIndex;
-          selectedLayerIndex = layerIndexOfShape;
+          customizeShapeIndex = dynamicIndex;
+          customizeLayerIndex = layerIndexOfShape;
           // 図形を選択、カスタマイズ可能に
           p.customizeShape(layerIndexOfShape, dynamicIndex);
         });
@@ -1247,7 +1265,11 @@ let sketch1 = new p5((p) => {
 
   p.customizeShape = function (layerIndex, shapeIndex) {
     selectedcustomizeShape = layers[layerIndex].shapes[shapeIndex];
-    //console.log(selectedcustomizeShape);
+
+    // スライダーを表示
+    document.getElementById('rotation-slider-container').classList.remove('hidden');
+    // スライダーの値を選択した図形の回転度に設定
+    document.getElementById('rotation-slider').value = selectedcustomizeShape.rotation;
 
     if (!mode2D) {
       document.getElementById('color-selector').classList.remove('hidden');
@@ -1260,19 +1282,33 @@ let sketch1 = new p5((p) => {
   p.documentClickHandler = function() {
     document.addEventListener('click', (event) => {
       let colorSelector = document.getElementById('color-selector');
+      let rotationSlider = document.getElementById('rotation-slider-container');
       // クリックされたのがshapeItemでなければ選択解除
-      if (selectedShapeIndex !== -1 && selectedLayerIndex !== -1) {
-        // クリックされた場所がレイヤーリスト以外か確認
-        if (!layerList.contains(event.target) && !colorSelector.contains(event.target)) {
-            selectedShapeIndex = -1;
-            selectedLayerIndex = -1;
+      if (customizeShapeIndex !== -1 && customizeLayerIndex !== -1) {
+        // クリックされた場所がレイヤーリスト・カラー選択・スライダー以外か確認
+        if (!layerList.contains(event.target) && !colorSelector.contains(event.target) && !rotationSlider.contains(event.target)) {
+          customizeShapeIndex = -1;
+          customizeLayerIndex = -1;
 
-            selectedcustomizeShape = null;
+          selectedcustomizeShape = null;
+          rotationSlider.classList.add('hidden');
           if (!mode2D){// カラー選択を非表示に
             colorSelector.classList.add('hidden');
           }
         }
       }
+    });
+  };
+
+  p.setupRotationSlider = function() {
+    // スライダーのイベントリスナーを設定
+    let rotationSlider = document.getElementById('rotation-slider');
+    rotationSlider.addEventListener('input', function(event) {
+      if (selectedcustomizeShape) {
+        const rotationValue = event.target.value; // スライダーの値を取得
+        selectedcustomizeShape.rotation = rotationValue; // 図形に回転度を格納
+      }
+      event.stopPropagation(); // スライダー操作中は他のクリックイベントを無視
     });
   };
 }, 'canvas');
@@ -1281,7 +1317,7 @@ let partsCanvas;
 
 function initializeTab2() {
   if (sketch2) {
-    console.log(sketch2);
+    //console.log(sketch2);
     sketch2.remove(); // タブ2のスケッチを削除
     sketch2 = null; // スケッチ2の参照をクリア
     partsSketches.forEach(sketch => {
@@ -1292,13 +1328,13 @@ function initializeTab2() {
   // サイズ決定(変換もしていない場合に必要)
   layers.forEach((layer) => {
     layer.shapes.forEach((shape) => {
-        if (shape.d) {
-          shape.scale = shape.d/300;
-          decideSizeParameters(shape, shape.type, shape.d, 0, 0);
-        } else {
-          shape.scale = Math.max(shape.l, shape.w) / 500;
-          decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
-        }
+      if (shape.d) {
+        shape.scale = shape.d/300;
+        decideSizeParameters(shape, shape.type, shape.d, 0, 0);
+      } else {
+        shape.scale = Math.max(shape.l, shape.w) / 500;
+        decideSizeParameters(shape, shape.type, 0, shape.w, shape.l);
+      }
     });
   });    
 
@@ -1573,6 +1609,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   if (parts_f == 1) {
     p.translate(0, 0, 0);
   } else {
+    p.rotateZ(p.radians(shape.rotation));
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
   }
   let scaleValue = shape.scale * 1.62;
@@ -1592,9 +1629,11 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
   }
   
   let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
-  
+
   p.noFill();
-  p.strokeWeight(shape.innerCurveWeight);
+  if (shape.innerCurveWeight) {
+    p.strokeWeight(shape.innerCurveWeight);
+  }
   let shapeInnerCurves = [];
   for (let i = 0; i < innerCurves.length; i++) {
     let color;
@@ -2026,7 +2065,6 @@ function getMaterialColor (){
       }
     });
   });
-  console.log(material);
   let materialz = {}; // materialz の初期化
 
   // material をループ
@@ -2048,7 +2086,7 @@ function getMaterialColor (){
   }
 
   // 結果を確認
-  console.log(materialz);
+  //console.log(materialz);
   return materialz;
 }
 

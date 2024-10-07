@@ -109,6 +109,15 @@ main {
 }
 
 #canvas {
+  margin-left: 120px;
+  border: 1px solid #ccc;
+}
+
+#rotation-slider-container {
+  position: absolute;
+  left: 30px;
+  top: 500px;
+  width: 200px;
 }
 
 #layer-menu {
@@ -137,7 +146,7 @@ main {
   margin: 0;
   background-color: #f1f1f1;
   border: 1px solid #ddd;
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -261,6 +270,7 @@ h1 {
   width: 800px;
   height: 800px;
   margin: 0 auto;
+  border: 1px solid #ccc;
 }
 
 #complete-view-container hr {
