@@ -900,7 +900,6 @@ let sketch1 = new p5((p) => {
           let cornerY = shape.y - shape.d / 2;
           if (p.mouseX > cornerX - resizeCornerSize && p.mouseX < cornerX &&
               p.mouseY > cornerY - resizeCornerSize && p.mouseY < cornerY) {
-                console.log("ok");
             resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
             return;
           }
@@ -909,7 +908,6 @@ let sketch1 = new p5((p) => {
           let markerY = shape.y + shape.d / 2 * p.sin(p.QUARTER_PI);
           if (p.mouseX > markerX - resizeCornerSize / 2 && p.mouseX < markerX + resizeCornerSize / 2 &&
               p.mouseY > markerY - resizeCornerSize / 2 && p.mouseY < markerY + resizeCornerSize / 2) {
-                console.log("ok");
             resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
             return;
           }
@@ -918,7 +916,6 @@ let sketch1 = new p5((p) => {
           let cornerY = shape.y + shape.l / 2;
           if (p.mouseX > cornerX - resizeCornerSize / 2 && p.mouseX < cornerX + resizeCornerSize / 2 &&
               p.mouseY > cornerY - resizeCornerSize / 2 && p.mouseY < cornerY + resizeCornerSize / 2) {
-                console.log("ok");
             resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
             return;
           }
@@ -1002,7 +999,7 @@ let sketch1 = new p5((p) => {
       minWidth = 40;
       maxWidth = 150;
       minLength = 70;
-      maxLength = 400;
+      maxLength = 370;
       // 現在のサイズを一時的に取得
       let newWidth = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
       let newLength = p.constrain((p.mouseY - shape.y) * 2, minLength, maxLength);
@@ -1631,7 +1628,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     } else if (shape.type === 'ume') {
       points = ume_points;
     } else if (shape.type === 'renzoku') {
-      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.7, 0.6]; // インデックス0は使用しない
+      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
       scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
       points = renzokuAwaji(shape.renzokuNum);//何連続か
     }
@@ -2025,11 +2022,45 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
       3.5: { numInnerCurves: 6, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
     },
     renzoku: {
-      '1-2': { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5 , materialCm: 23 },
-      '1.5-3.3': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5 , materialCm: 45 },
-      '2-4': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
-      '2.5-5.5': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 },
-      '3-5.6': { numInnerCurves: 5, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60 }
+      2: {
+        '1-1.5': { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5, materialCm: 23 },
+        '1.5-2': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 23 },
+        '2-3': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 30 },
+        '2.5-3.5': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 45 },
+        '3-4.5': { numInnerCurves: 5, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 60 },
+      },
+      3: {
+        '1-2': { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5, materialCm: 23 },
+        '1.5-3.3': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 45 },
+        '2-4': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 45 },
+        '2.5-5.5': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 60 },
+        '3-5.6': { numInnerCurves: 5, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 60 },
+      },
+      4: {
+        '1-2.8': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 30 },
+        '1.5-4': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 45 },
+        '2-5.5': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 67 },
+        '2.5-7.3': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 67 },
+        '3.0-9.5': { numInnerCurves: 5, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 90 },
+      },
+      5: {
+        '1-3.5': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 45 },
+        '1.5-5': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 67 },
+        '2-6.5': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 67 },
+        '2.5-8.5': { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5, materialCm: 90 },
+      },
+      6: {
+        '1-4.2': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 67 },
+        '1.5-6.2': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 67 },
+        '2-7.5': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 90 },
+      },
+      7: {
+        '1-5': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 90 },
+        '1.5-7': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 90 },
+      },
+      8: {
+        '1-5.8': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 90 },
+      },
     },
     // その他のモデルが追加される場合はここに定義
     other: {
@@ -2049,23 +2080,25 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     return;
   }
 
+  let renzokuNum;
   if (type === 'renzoku') {
     let sizeDifference = Math.abs(shapeWidth - shapeLength);
-    if (sizeDifference >= 350) {
-      shape.renzokuNum = 8;
-    } else if (sizeDifference >= 320) {
-      shape.renzokuNum = 7;
+    if (sizeDifference >= 330) {
+      renzokuNum = 8;
+    } else if (sizeDifference >= 310) {
+      renzokuNum = 7;
     } else if (sizeDifference >= 280) {
-      shape.renzokuNum = 6;
+      renzokuNum = 6;
     } else if (sizeDifference >= 230) {
-      shape.renzokuNum = 5;
+      renzokuNum = 5;
     } else if (sizeDifference >= 180) {
-      shape.renzokuNum = 4;
+      renzokuNum = 4;
     } else if (sizeDifference >= 130) {
-      shape.renzokuNum = 3;
+      renzokuNum = 3;
     } else {
-      shape.renzokuNum = 2;
+      renzokuNum = 2;
     }
+    shape.renzokuNum = renzokuNum;
   }
 
   let closestParams, closestSize;
@@ -2086,8 +2119,8 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   // 最も近いサイズに対応するパラメータを shape に適用
   closestParams = params[type][closestSize];
     //console.log(closestParams);
-  } else {// 使用可能なサイズキーを取得して、幅と高さに分解し、数値に変換
-    let availableKeys = Object.keys(params.renzoku);
+  } else if (type === 'renzoku'){// 使用可能なサイズキーを取得して、幅と高さに分解し、数値に変換
+    let availableKeys = Object.keys(params.renzoku[renzokuNum]);
     let closestKey = availableKeys[0];
     let minDifference = Infinity;
     
@@ -2101,6 +2134,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     
       // 誤差の合計を計算
       let totalDifference = widthDifference + lengthDifference;
+      //console.log(widthDifference, lengthDifference, totalDifference);
     
       // 最も小さい誤差のキーを探す
       if (totalDifference < minDifference) {
@@ -2108,7 +2142,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
         closestKey = currentKey;
       }
     }
-    closestParams = params[type][closestKey];
+    closestParams = params.renzoku[renzokuNum][closestKey];
   }
 
   shape.numInnerCurves = closestParams.numInnerCurves;
@@ -2117,10 +2151,19 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   if(cmSize){
   shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
   // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
-  }else{
+  } else if (type === 'renzoku') {
+    let difference = (1/(renzokuNum*1.2)-shape.numInnerCurves*4 +8) * 0.2;
+    let calculatedValue = (shape.numInnerCurves*9+difference)*0.75;
+    console.log(difference, calculatedValue);
+    shape.outerCurveWeight = calculatedValue; 
+  } else {
     shape.outerCurveWeight = (cmWidth + cmLength) / 2 * 6; 
   }
-  shape.materialCm = closestParams.materialCm;
+  if (type === 'renzoku') {
+    shape.materialCm = closestParams.materialCm;
+  } else {
+    shape.materialCm = closestParams.materialCm;
+  }
 }
 
 function getMaterialColor (){
