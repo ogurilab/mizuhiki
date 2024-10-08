@@ -21,7 +21,7 @@ main {
   display: none;
 }
 
-.circle-button, .triangle-button, .rectangle-button {
+.circle-button, .triangle-button, .rectangle-button, .donut-button {
   width: 30px;
   height: 30px;
   border: none;
@@ -44,6 +44,14 @@ main {
   width        : 40px;
   height       : 30px;
   background: black;
+}
+
+.donut-button {
+  display: inline-block;
+  position: relative;
+  background-color: black;
+  clip-path: circle(50%);
+  mask-image: radial-gradient(transparent 30%, black 30%);
 }
 
 #convert-button {

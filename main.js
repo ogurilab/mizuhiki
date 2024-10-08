@@ -1,7 +1,7 @@
 //let shapes = [];
 let layers = [];
 //let mode2D = true;
-let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [];
+let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [], aioien_points = [];
 //let currentType = null;
 let innerCurvesData = [];
 //let selectedCurve = null;
@@ -154,6 +154,12 @@ let sketch1 = new p5((p) => {
             //p.fill(165, 42, 42, 100);
             p.drawRenzokuawaji(0, 0, shape.w, shape.l);
             p.rect(shape.w/2 - resizeCornerSize/2, shape.l/2 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
+          } else if (shape.type === 'aioien') {
+            //p.fill(165, 42, 42, 100);
+            p.drawDonut(0, 0, shape.d, shape.d*0.7);
+            let markerX =shape.d/2 * p.cos(p.QUARTER_PI);  // QUARTER_PI=45度
+            let markerY =shape.d/2 * p.sin(p.QUARTER_PI);
+            p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           }
           p.pop();
         });
@@ -347,6 +353,30 @@ let sketch1 = new p5((p) => {
     p.rect(x, y, w, l);
     p.pop();
   }
+
+  p.drawDonut = function (x, y, outD, innerD) {
+    p.push();
+    p.translate(x, y);
+
+    p.beginShape();
+    // 外側の円
+    for (let angle = 0; angle < p.TWO_PI; angle += 0.01) {
+      let x = p.cos(angle) * (outD / 2);
+      let y = p.sin(angle) * (outD / 2);
+      p.vertex(x, y);
+    }
+    // 内側の円（反時計回りに描く）
+    p.beginContour();
+    for (let angle = p.TWO_PI; angle > 0; angle -= 0.01) {
+      let x = p.cos(angle) * (innerD / 2);
+      let y = p.sin(angle) * (innerD / 2);
+      p.vertex(x, y);
+    }
+    p.endContour();
+    p.endShape(p.CLOSE);
+    
+    p.pop();
+  }
 /*
   //選択された図形の種類によってサイズ選択ボタンを表示・非表示にする
   p.showSizeSelector = function (type) {
@@ -418,6 +448,17 @@ let sketch1 = new p5((p) => {
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else if (type === 'awaji' || type === 'ume'){
+      let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        d: shapeDiameter,
+        scale: shapeDiameter / 300,
+        rotation: 0,
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      };
+    } else if (type === 'aioien'){
       let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
       newShape = {
         type: type,
@@ -919,6 +960,14 @@ let sketch1 = new p5((p) => {
             resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
             return;
           }
+        } else if (shape.type === 'aioien') {
+          let markerX = shape.x + shape.d / 2 * p.cos(p.QUARTER_PI);
+          let markerY = shape.y + shape.d / 2 * p.sin(p.QUARTER_PI);
+          if (p.mouseX > markerX - resizeCornerSize / 2 && p.mouseX < markerX + resizeCornerSize / 2 &&
+              p.mouseY > markerY - resizeCornerSize / 2 && p.mouseY < markerY + resizeCornerSize / 2) {
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
+            return;
+          }
         }
       }
     }
@@ -1012,6 +1061,10 @@ let sketch1 = new p5((p) => {
           shape.w = newWidth;
           shape.l = newLength;
       }
+    } else if (shape.type === 'aioien') {
+      minSize = 80;
+      maxSize = 200;
+      shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     }
   }  
 
@@ -1631,6 +1684,9 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
       const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
       scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
       points = renzokuAwaji(shape.renzokuNum);//何連続か
+    } else if (shape.type === 'aioien') {
+      scaleValue = shape.scale * 1.3;
+      points = aioien_points;
     }
   } else {
     points = getProcessPoints(shape.type, processNo);
@@ -1759,6 +1815,42 @@ function definePoints() {
     { x: -15, y: -75, z: 7 },
     { x: 45, y: -30, z: -5 },
   ]
+
+  aioien_points = [
+    { x: -60, y: -60, z: -5}, 
+    { x: -25, y: -100, z: 5}, 
+    { x: 25, y: -100, z: -5}, 
+    { x: 60, y: -60, z: 5}, 
+    { x: 80, y: 0, z: -5}, 
+    { x: 85, y: 55, z: 5}, 
+    { x: 55, y: 85, z: -5}, 
+    { x: 0, y: 80, z: 5}, 
+    { x: -60, y: 60, z: -5}, 
+    { x: -100, y: 25, z: 5}, 
+    { x: -100, y: -25, z: -5}, 
+    { x: -60, y: -60, z: 5}, 
+    { x: 0, y: -80, z: -5}, 
+    { x: 55, y: -85, z: 5}, 
+    { x: 85, y: -55, z: -5}, 
+    { x: 80, y: 0, z: 5}, 
+    { x: 60, y: 60, z: -5}, 
+    { x: 25, y: 100, z: 5}, 
+    { x: -25, y: 100, z: -5}, 
+    { x: -60, y: 60, z: 5}, 
+    { x: -80, y: 0, z: -5}, 
+    { x: -85, y: -55, z: 5}, 
+    { x: -55, y: -85, z: -5}, 
+    { x: 0, y: -80, z: 5}, 
+    { x: 60, y: -60, z: -5}, 
+    { x: 100, y: -25, z: 5}, 
+    { x: 100, y: 25, z: -5}, 
+    { x: 60, y: 60, z: 5}, 
+    { x: 0, y: 80, z: -5}, 
+    { x: -55, y: 85, z: 5}, 
+    { x: -85, y: 55, z: -5}, 
+    { x: -80, y: 0, z: 5}, 
+    { x: -60, y: -60, z: -5}, 
+  ];
 }
 /*
 function getPartsPoints(type, processNo) {
@@ -2062,6 +2154,11 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
         '1-5.8': { numInnerCurves: 1, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 90 },
       },
     },
+    aioien: {
+      2.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 23},
+      3.0: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
+      4.0: { numInnerCurves: 3, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
+    },
     // その他のモデルが追加される場合はここに定義
     other: {
       1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 , materialCm: 30 },
@@ -2100,7 +2197,6 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     }
     shape.renzokuNum = renzokuNum;
   }
-
   let closestParams, closestSize;
   if (cmSize) {
     // 使用可能なサイズキーを取得して、数値に変換
@@ -2148,13 +2244,16 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   shape.numInnerCurves = closestParams.numInnerCurves;
   //shape.outerCurveWeight = closestParams.outerCurveWeight;
   shape.innerCurveWeight = closestParams.innerCurveWeight;
-  if(cmSize){
-  shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
-  // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+  if(type === 'aioien'){
+    shape.outerCurveWeight = cmSize * 4.5;  // shapeSize に基づいてスケール
+    // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+  } else if(cmSize){
+    shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
+    // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
   } else if (type === 'renzoku') {
     let difference = (1/(renzokuNum*1.2)-shape.numInnerCurves*4 +8) * 0.2;
     let calculatedValue = (shape.numInnerCurves*9+difference)*0.75;
-    console.log(difference, calculatedValue);
+    //console.log(difference, calculatedValue);
     shape.outerCurveWeight = calculatedValue; 
   } else {
     shape.outerCurveWeight = (cmWidth + cmLength) / 2 * 6; 
