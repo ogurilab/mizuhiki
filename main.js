@@ -762,11 +762,19 @@ let sketch1 = new p5((p) => {
           }
           nowKey = p.key;
           curveIndex = p.key;
-          selectedCurve = { layerIndex: layerIndex, shapeIndex: shapeIndex, curveIndex: curveIndex };
-          //console.log("Selected curve:", selectedCurve);
-          // 元の色を保存
-          originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
-          p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
+          if (innerCurvesData[layerIndex] && 
+              innerCurvesData[layerIndex][shapeIndex] && 
+              innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
+            selectedCurve = { layerIndex: layerIndex, shapeIndex: shapeIndex, curveIndex: curveIndex };
+            console.log("Selected curve:", selectedCurve);
+            originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
+            p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
+          } else {
+            console.log("Invalid curve index");
+            originalColor = null;
+            nowKey = null;
+            selectedCurve = null;
+          }
         } else if (p.key >= '0' && p.key <= '9') {
           // 他のキーが押された場合、選択を解除して色を元に戻す
           if (selectedCurve) {
