@@ -487,7 +487,7 @@ let sketch1 = new p5((p) => {
             p.addDecidedShape();
           }
         } else if (selectedCurve && selectedcustomizeShape) {
-          console.log('ok');
+          //console.log('ok');
           // 選択されたカーブに色を適用
           let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
           innerCurvesData[layerIndex][shapeIndex][curveIndex].color = selectedColor;
@@ -766,7 +766,7 @@ let sketch1 = new p5((p) => {
               innerCurvesData[layerIndex][shapeIndex] && 
               innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
             selectedCurve = { layerIndex: layerIndex, shapeIndex: shapeIndex, curveIndex: curveIndex };
-            console.log("Selected curve:", selectedCurve);
+            //console.log("Selected curve:", selectedCurve);
             originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
             p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
           } else {
@@ -1538,6 +1538,24 @@ function initializeTab2() {
         // モーダルを表示
         modal.style.display = 'block';
 
+        // モーダルを閉じるイベント
+        const closeModal = document.querySelector('.modal .close');
+        closeModal.onclick = function() {
+          modal.style.display = 'none';
+        }
+
+        // モーダルの外をクリックしたら閉じる
+        window.onclick = function(event) {
+          if (event.target === modal) {
+            modal.style.display = 'none';
+          }
+        }
+
+        // 作り方未実装の場合エラー落ちしないように
+        if (!partsPoints[shape.type]){
+          return;
+        }
+
         // 既存のキャンバスをクリア
         modalCanvasContainer.innerHTML = '';
 
@@ -1606,19 +1624,6 @@ function initializeTab2() {
             modalSketch.redraw();
           }
         });
-
-        // モーダルを閉じるイベント
-        const closeModal = document.querySelector('.modal .close');
-        closeModal.onclick = function() {
-          modal.style.display = 'none';
-        }
-
-        // モーダルの外をクリックしたら閉じる
-        window.onclick = function(event) {
-          if (event.target === modal) {
-            modal.style.display = 'none';
-          }
-        }
       }
     });
   });
