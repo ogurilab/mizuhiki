@@ -1825,39 +1825,35 @@ function definePoints() {
   ]
 
   aioien_points = [
-    { x: -60, y: -60, z: -5}, 
-    { x: -25, y: -100, z: 5}, 
-    { x: 25, y: -100, z: -5}, 
-    { x: 60, y: -60, z: 5}, 
-    { x: 80, y: 0, z: -5}, 
-    { x: 85, y: 55, z: 5}, 
-    { x: 55, y: 85, z: -5}, 
-    { x: 0, y: 80, z: 5}, 
-    { x: -60, y: 60, z: -5}, 
-    { x: -100, y: 25, z: 5}, 
-    { x: -100, y: -25, z: -5}, 
-    { x: -60, y: -60, z: 5}, 
-    { x: 0, y: -80, z: -5}, 
-    { x: 55, y: -85, z: 5}, 
-    { x: 85, y: -55, z: -5}, 
-    { x: 80, y: 0, z: 5}, 
-    { x: 60, y: 60, z: -5}, 
-    { x: 25, y: 100, z: 5}, 
-    { x: -25, y: 100, z: -5}, 
-    { x: -60, y: 60, z: 5}, 
-    { x: -80, y: 0, z: -5}, 
-    { x: -85, y: -55, z: 5}, 
-    { x: -55, y: -85, z: -5}, 
-    { x: 0, y: -80, z: 5}, 
-    { x: 60, y: -60, z: -5}, 
-    { x: 100, y: -25, z: 5}, 
-    { x: 100, y: 25, z: -5}, 
-    { x: 60, y: 60, z: 5}, 
-    { x: 0, y: 80, z: -5}, 
-    { x: -55, y: 85, z: 5}, 
-    { x: -85, y: 55, z: -5}, 
-    { x: -80, y: 0, z: 5}, 
-    { x: -60, y: -60, z: -5}, 
+    { x: -50, y: 45, z: -5}, 
+    { x: -95, y: -10, z: 5}, 
+    { x: -75, y: -60, z: -5}, 
+    { x: -20, y: -65, z: 5}, 
+    { x: 45, y: -55, z: -5}, 
+    { x: 90, y: -35, z: 5}, 
+    { x: 95, y: 15, z: -5}, 
+    { x: 60, y: 45, z: 5}, 
+    { x: 0, y: 70, z: -5}, 
+    { x: -60, y: 70, z: 5}, 
+    { x: -90, y: 25, z: -5}, 
+    { x: -65, y: -30, z: 5}, 
+    { x: -20, y: -65, z: -5}, 
+    { x: 35, y: -85, z: 5}, 
+    { x: 80, y: -55, z: -5}, 
+    { x: 73, y: -5, z: 5}, 
+    { x: 60, y: 45, z: -5}, 
+    { x: 30, y: 85, z: 5}, 
+    { x: -25, y: 90, z: -5}, 
+    { x: -50, y: 45, z: 5}, 
+    { x: -65, y: -30, z: -5}, 
+    { x: -45, y: -80, z: 5}, 
+    { x: 5, y: -90, z: -5}, 
+    { x: 45, y: -55, z: 5}, 
+    { x: 75, y: -5, z: -5}, 
+    { x: 85, y: 45, z: 5}, 
+    { x: 55, y: 80, z: -5},  
+    { x: 0, y: 70, z: 5}, 
+    { x: -50, y: 45, z: -5}
   ];
 }
 /*
@@ -2242,7 +2238,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     cmWidth = shapeWidth / 50;
     cmLength = shapeLength /  50;
   }
-
+console.log(cmSize);
   // デフォルトのパラメータ
   let defaultParams = {
     numInnerCurves: 4,
@@ -2312,7 +2308,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     aioien: {
       2.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 23},
       3.0: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
-      4.0: { numInnerCurves: 3, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
+      3.4: { numInnerCurves: 3, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
     },
     // その他のモデルが追加される場合はここに定義
     other: {
@@ -2400,7 +2396,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   //shape.outerCurveWeight = closestParams.outerCurveWeight;
   shape.innerCurveWeight = closestParams.innerCurveWeight;
   if(type === 'aioien'){
-    shape.outerCurveWeight = cmSize * 4.5;  // shapeSize に基づいてスケール
+    shape.outerCurveWeight = cmSize * 4.8;  // shapeSize に基づいてスケール
     // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
   } else if(cmSize){
     shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
