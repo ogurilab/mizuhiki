@@ -1553,7 +1553,7 @@ function initializeTab2() {
 
         // 作り方未実装の場合エラー落ちしないように
         if (!partsPoints[shape.type]){
-          return;
+          //return;
         }
 
         // 既存のキャンバスをクリア
@@ -1569,7 +1569,14 @@ function initializeTab2() {
         const nextButton = document.getElementById('nextButton');
 
         let processNo = 1;
-        const totalProcesses = getTotalProcesses(shape.type);
+        let totalProcesses;
+        if (shape.type === 'renzoku') {
+          totalProcesses = (shape.renzokuNum-1)*4+1;
+          generateRenzokuPoints(shape.renzokuNum);
+          console.log(partsPoints['renzoku']);
+        } else {
+          totalProcesses = getTotalProcesses(shape.type);
+        }
 
         // ボタンの状態を更新する関数
         function updateButtonStates() {
@@ -1608,6 +1615,7 @@ function initializeTab2() {
        
         // 矢印ボタンのクリックイベント
         prevButton.addEventListener('click', () => {
+          //console.log(partsPoints['renzoku']);
           if (processNo > 1) {
             processNo--;
             updateButtonStates();
@@ -1807,27 +1815,51 @@ function definePoints() {
     };
   });
 
-  awajiRl_points = [
-    { x: -45, y: -30, z: 5 },
-    { x: 15, y: -75, z: -7 },
-    { x: 70, y: -60, z: 5 },
-    { x: 70, y: -5, z: -10 },
-    { x: 10, y: 5, z: 5 },
-    { x: -40, y: -20, z: -5 },
-    { x: -60, y: -60, z: 5 },
-    { x: -90, y: -120, z: 0 }
-  ]
+  awajiRl_points = {
+    process1: [
+      { x: -45, y: -30, z: 5 },
+      { x: 15, y: -75, z: -7 },
+      { x: 70, y: -60, z: 5 },
+      { x: 70, y: -5, z: -10 },
+      { x: 10, y: 5, z: 5 },
+      { x: -40, y: -20, z: -5 },
+      { x: -60, y: -60, z: 5 },
+      { x: -90, y: -120, z: 0 }
+    ],
+    process2: [
+      { x: -45, y: -30, z: -5 },
+      { x: 15, y: -75, z: 7 },
+      { x: 70, y: -60, z: -5 },
+      { x: 70, y: -5, z: 0 },
+      { x: 10, y: 5, z: -5 },
+      { x: -40, y: -20, z: 5 },
+      { x: -60, y: -60, z: -5 },
+      { x: -90, y: -120, z: 10 }
+    ],
+  }
 
-  awajiRr_points = [
-    { x: 90, y: -120, z: 0 },
-    { x: 60, y: -60, z: -5 },
-    { x: 40, y: -20, z: 5 },
-    { x: -10, y: 5, z: -5 },
-    { x: -70, y: -5, z: 10 },
-    { x: -70, y: -60, z: -5 },
-    { x: -15, y: -75, z: 7 },
-    { x: 45, y: -30, z: -5 },
-  ]
+  awajiRr_points = {
+    process1: [
+      { x: 90, y: -120, z: 0 },
+      { x: 60, y: -60, z: -5 },
+      { x: 40, y: -20, z: 5 },
+      { x: -10, y: 5, z: -5 },
+      { x: -70, y: -5, z: 10 },
+      { x: -70, y: -60, z: -5 },
+      { x: -15, y: -75, z: 7 },
+      { x: 45, y: -30, z: -5 },
+    ],
+    process2: [
+      { x: 90, y: -120, z: -10 },
+      { x: 60, y: -60, z: 5 },
+      { x: 40, y: -20, z: -5 },
+      { x: -10, y: 5, z: 5 },
+      { x: -70, y: -5, z: 0 },
+      { x: -70, y: -60, z: 5 },
+      { x: -15, y: -75, z: -7 },
+      { x: 45, y: -30, z: 5 },
+    ],
+  }
 
   aioien_points = [
     { x: -50, y: 45, z: -5}, 
@@ -2262,6 +2294,59 @@ const partsPoints = {
       { x: 0, y: 70, z: 5}, 
       { x: -50, y: 45, z: -5}
     ],
+  },
+  renzoku: {},
+  renzokuL: {
+    process1: [
+      { x: -45, y: -30, z: -5 },
+      { x: 15, y: -75, z: 7 },
+      { x: 70, y: -60, z: -5 },
+    ],
+    process2: [
+      { x: 70, y: -5, z: 0 },
+      { x: 10, y: 5, z: -5 },
+      { x: -40, y: -20, z: 5 },
+      { x: -60, y: -60, z: -5 },
+      { x: -90, y: -120, z: 10 }
+    ],
+    process3: [
+      { x: -45, y: -30, z: 5 },
+      { x: 15, y: -75, z: -7 },
+      { x: 70, y: -60, z: 5 },
+    ],
+    process4: [
+      { x: 70, y: -5, z: -10 },
+      { x: 10, y: 5, z: 5 },
+      { x: -40, y: -20, z: -5 },
+      { x: -60, y: -60, z: 5 },
+      { x: -90, y: -120, z: 0 }
+    ],
+  },
+  renzokuR: {
+    process1: [
+      { x: -70, y: -60, z: 5 },
+      { x: -15, y: -75, z: -7 },
+      { x: 45, y: -30, z: 5 },
+    ],
+    process2: [
+      { x: 90, y: -120, z: -10 },
+      { x: 60, y: -60, z: 5 },
+      { x: 40, y: -20, z: -5 },
+      { x: -10, y: 5, z: 5 },
+      { x: -70, y: -5, z: 0 },
+    ],
+    process3: [
+      { x: -70, y: -60, z: -5 },
+      { x: -15, y: -75, z: 7 },
+      { x: 45, y: -30, z: -5 },
+    ],
+    process4: [
+      { x: 90, y: -120, z: 0 },
+      { x: 60, y: -60, z: -5 },
+      { x: 40, y: -20, z: 5 },
+      { x: -10, y: 5, z: -5 },
+      { x: -70, y: -5, z: 10 },
+    ],
   }
 };
 
@@ -2277,23 +2362,30 @@ function getProcessPoints(type, processNo) {
 
 function renzokuAwaji(n) {
   let points = renzoku_points;
-  let new_awajiRr = awajiRr_points;
-  let new_awajiRl = awajiRl_points;
-  let yDiff = Math.abs(new_awajiRr[0].y - new_awajiRr[6].y - 60);
-  
+  let new_awajiRr = JSON.parse(JSON.stringify(awajiRr_points));  // ディープコピー
+  let new_awajiRl = JSON.parse(JSON.stringify(awajiRl_points));  // ディープコピー
+  let yDiff = Math.abs(new_awajiRr.process1[0].y - new_awajiRr.process1[6].y - 60);
   for (let i=0; i<n-1; i++){
-    
-    points = new_awajiRr.concat(points.slice(1));
-    points = points.slice(0, -1).concat(new_awajiRl);
-    
+    if (i % 2 === 1) {
+      points = new_awajiRr.process1.concat(points.slice(1));
+      points = points.slice(0, -1).concat(new_awajiRl.process1);
+    } else {
+      points = new_awajiRr.process2.concat(points.slice(1));
+      points = points.slice(0, -1).concat(new_awajiRl.process2);
+    }
     // 新しい配列を作成し、y 座標を差分だけ小さくする
-    new_awajiRr = new_awajiRr.map(point => {
+    new_awajiRr.process1 = new_awajiRr.process1.map(point => {
       return { x: point.x, y: point.y - yDiff, z: point.z};
     });
-    new_awajiRl = new_awajiRl.map(point => {
+    new_awajiRl.process1 = new_awajiRl.process1.map(point => {
       return { x: point.x, y: point.y - yDiff, z: point.z};
     });
-    
+    new_awajiRr.process2 = new_awajiRr.process2.map(point => {
+      return { x: point.x, y: point.y - yDiff, z: point.z};
+    });
+    new_awajiRl.process2 = new_awajiRl.process2.map(point => {
+      return { x: point.x, y: point.y - yDiff, z: point.z};
+    });
   }
 
   // 最上部と最下部のy座標を取得市、中心点を計算
@@ -2310,6 +2402,55 @@ function renzokuAwaji(n) {
     return { x: point.x, y: point.y - offsetY, z: point.z };
   });
   return points;
+}
+
+function generateRenzokuPoints(n) {
+  let points = [...renzoku_points]; // 基準となるポイントをコピー
+
+  // 最初のプロセスを設定
+  partsPoints['renzoku']['process1'] = [...points]; // 初期のポイント
+
+  // 各プロセスを生成
+  for (let round = 0; round < n/2; round++) {
+    for (let i = 1; i <= 8; i++) {
+      const processName = `process${round * 8 + i + 1}`; // プロセス名を設定
+
+      if (i === 1) {
+        // process2: renzokuRのプロセス1
+        points = points.slice(1); // 最初の要素を削除
+        points = partsPoints['renzokuR'].process1.concat(points);
+      } else if (i === 2) {
+        // process3: renzokuRのプロセス2
+        //points = points.slice(4); // 最初の要素を削除
+        points = partsPoints['renzokuR'].process2.concat(points); 
+      } else if (i === 3) {
+        // process4: renzokuLのプロセス1
+        points = points.slice(0, -1).concat(partsPoints['renzokuL'].process1); 
+      } else if (i === 4) {
+        // process5: renzokuLのプロセス2
+        points = points.concat(partsPoints['renzokuL'].process2); 
+      } else if (i === 5) {
+        points = points.map(point => ({ x: point.x, y: point.y - awajiRr_points.process1[0].y - awajiRr_points.process1[6].y - 100, z: point.z })); 
+        // process3: renzokuRのプロセス2
+        points = points.slice(1); // 最初の要素を削除
+        points = partsPoints['renzokuR'].process3.concat(points); 
+      } else if (i === 6) {
+        // process3: renzokuRのプロセス2
+        points = partsPoints['renzokuR'].process4.concat(points); 
+      } else if (i === 7) {
+        // process4: renzokuLのプロセス1
+        points = points.slice(0, -1).concat(partsPoints['renzokuL'].process3); 
+      } else if (i === 8) {
+        // process5: renzokuLのプロセス2
+        points = points.concat(partsPoints['renzokuL'].process4); 
+      }
+
+      // 現在のポイントを保存
+      partsPoints['renzoku'][processName] = [...points]; // 現在のポイントを保存
+    }
+    // y座標の調整を行う
+    points = points.map(point => ({ x: point.x, y: point.y - awajiRr_points.process1[0].y - awajiRr_points.process1[6].y - 100, z: point.z })); // y座標をずらす例
+  }
 }
 
 function drawCurveFromPoints(p, pts) {
