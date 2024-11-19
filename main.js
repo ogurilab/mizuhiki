@@ -112,6 +112,7 @@ let sketch1 = new p5((p) => {
     p.background(250);
     //console.log(layers);
     if (mode2D) {
+      let connectionDistance = 10; // 接続判定の距離
       p.push();
       //resetMatrix(); // 座標系をリセット  
       if (mode2D_f == 1) {
@@ -152,7 +153,8 @@ let sketch1 = new p5((p) => {
             p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'renzoku') {
             //p.fill(165, 42, 42, 100);
-            p.drawRenzokuawaji(0, 0, shape.w, shape.l);
+            p.drawRenzokuawaji(shape, 0, 0, shape.w, shape.l);
+            //p.drawRenzokuawaji(0, 0, shape.w, shape.l);
             p.rect(shape.w/2 - resizeCornerSize/2, shape.l/2 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
           } else if (shape.type === 'aioien') {
             //p.fill(165, 42, 42, 100);
@@ -164,6 +166,108 @@ let sketch1 = new p5((p) => {
           p.pop();
         });
       });
+
+// 接続判定を行い、接続が成立している場合に接続線を描画
+/*connectorそれぞれを別判定（実装途中、判定フラグが1つしかない）
+layers.forEach(layer => {
+  layer.shapes.forEach(shape => {
+    shape.connectors.forEach(connector => {
+      layers.forEach(otherLayer => {
+        otherLayer.shapes.forEach(otherShape => {
+          i++;
+          if (shape !== otherShape) {
+            otherShape.connectors.forEach(otherConnector => {
+              // 各接続点の座標を計算
+              let connectorX = shape.x + connector.x * Math.cos(p.radians(shape.rotation)) - connector.y * Math.sin(p.radians(shape.rotation));
+              let connectorY = shape.y + connector.x * Math.sin(p.radians(shape.rotation)) + connector.y * Math.cos(p.radians(shape.rotation));
+              
+              let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - otherConnector.y * Math.sin(p.radians(otherShape.rotation));
+              let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + otherConnector.y * Math.cos(p.radians(otherShape.rotation));
+
+              // 距離を計算
+              let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
+              console.log(i+shape.isConnected+ shape.color);
+              
+              // 距離が指定範囲内なら自動で接続
+              if (distance <= connectionDistance) {
+                // 接続が成立した場合、接続を示す線を描画（または他の処理を実行）
+                p.stroke(0, 255, 0); // 緑色の接続線
+                p.line(connectorX, connectorY, otherConnectorX, otherConnectorY);
+                
+                // 接続情報を保存する場合
+                shape.isConnected = true;
+                otherShape.isConnected = true;
+                console.log(`Connected ${shape} to ${otherShape}`);
+              }
+              if (shape.isConnected == true && distance > connectionDistance) {
+                console.log('no');
+                shape.isConnected = false;
+                otherShape.isConnected = false;
+                console.log(`Not connected ${shape} to ${otherShape}`);
+              }
+            });
+          }
+        });
+      });
+    });
+  });
+});*/
+layers.forEach(layer => {
+  layer.shapes.forEach(shape => {
+      layers.forEach(otherLayer => {
+        otherLayer.shapes.forEach(otherShape => {
+          if (shape !== otherShape) {
+            // 各接続点の座標を計算
+            let connector = {
+              x: (shape.connectors[0].x + shape.connectors[1].x) / 2,
+              y: (shape.connectors[0].y + shape.connectors[1].y) / 2
+            };
+            let connectorX = shape.x + connector.x * Math.cos(p.radians(shape.rotation)) - (connector.y - 0) * Math.sin(p.radians(shape.rotation));
+            let connectorY = shape.y + connector.x * Math.sin(p.radians(shape.rotation)) + (connector.y - 0) * Math.cos(p.radians(shape.rotation));
+            
+            let otherConnector = {
+              x: (otherShape.connectors[0].x + otherShape.connectors[1].x) / 2,
+              y: (otherShape.connectors[0].y + otherShape.connectors[1].y) / 2
+            };
+            let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - (otherConnector.y - 0) * Math.sin(p.radians(otherShape.rotation));
+            let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + (otherConnector.y - 0) * Math.cos(p.radians(otherShape.rotation));
+
+            // 距離を計算
+            let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
+            //console.log(shape.isConnected+ ' '+shape.color);
+            //p.ellipse(connectorX, connectorY, 5);
+
+            // 距離が指定範囲内なら自動で接続
+            if (shape.isConnected == false && distance <= connectionDistance) {
+              // 接続が成立した場合、接続情報を保存する
+              shape.isConnected = true;
+              otherShape.isConnected = true;
+              console.log(`Connected ${shape} to ${otherShape}`);
+            }
+            if (shape.isConnected == true) {
+              p.stroke(255, 0, 0); //赤色の接続線
+              p.strokeWeight(5);
+              let j=1;
+              for (let i = 0; i < 2; i++) {
+                let connectorX = shape.x + shape.connectors[i].x * Math.cos(p.radians(shape.rotation)) - (shape.connectors[i].y - 15) * Math.sin(p.radians(shape.rotation));
+                let connectorY = shape.y + shape.connectors[i].x * Math.sin(p.radians(shape.rotation)) + (shape.connectors[i].y - 15) * Math.cos(p.radians(shape.rotation));
+                let otherConnectorX = otherShape.x + otherShape.connectors[j].x * Math.cos(p.radians(otherShape.rotation)) - (otherShape.connectors[j].y - 15) * Math.sin(p.radians(otherShape.rotation));
+                let otherConnectorY = otherShape.y + otherShape.connectors[j].x * Math.sin(p.radians(otherShape.rotation)) + (otherShape.connectors[j].y - 15) * Math.cos(p.radians(otherShape.rotation));
+                p.line(connectorX, connectorY, otherConnectorX, otherConnectorY);  
+                j--;
+              }
+            }
+            if (shape.isConnected == true && distance > connectionDistance) {
+              shape.isConnected = false;
+              otherShape.isConnected = false;
+              console.log(`Not connected ${shape} to ${otherShape}`);
+            }
+          }
+          
+        });
+      });
+    });
+});
       // サイズを変更する処理
       if (resizing) {
         p.resizeShape(resizing);
@@ -346,11 +450,34 @@ let sketch1 = new p5((p) => {
   }
 
   //連続あわじ結びの描画
-  p.drawRenzokuawaji = function (x, y, w, l) {
+  p.drawRenzokuawaji = function (shape, x, y, w, l) {
+  //p.drawRenzokuawaji = function (x, y, w, l) {
     p.push();
     //p.translate(x, y);
     p.rectMode(p.CENTER);
     p.rect(x, y, w, l);
+    // 接続点の描画
+    
+    let i=1;
+    for (let connector of shape.connectors) {
+      // 接続点のX座標は、長方形の中心から`w`に比例した位置に設定
+      let connectorX = (x - w / 2 + w * 0.8)*i;
+      // Y座標は長方形の上辺に配置
+      let connectorY = y - l / 2;
+      if(i == 1){
+        shape.connectors[0] = { x: connectorX, y: connectorY};
+      }else{
+        shape.connectors[1] = { x: connectorX, y: connectorY};
+      }
+      // 接続点の矢印の描画
+      p.push();
+      p.stroke(0, 0, 255);
+      p.fill(0, 0, 255);
+      p.line(connectorX, connectorY, connectorX, connectorY - 15); // 矢印の線部分
+      p.triangle(connectorX, connectorY - 15, connectorX - 5, connectorY - 9, connectorX + 5, connectorY - 9); // 矢印の先端部分
+      p.pop();
+      i=-1;
+    }
     p.pop();
   }
 
@@ -445,6 +572,11 @@ let sketch1 = new p5((p) => {
         l: shapeLength,
         scale: Math.max(shapeLength, shapeWidth) / 500,
         rotation: 0,
+        connectors: [
+          { x: 10, y: 0 }, // 左側の接続点
+          { x: -10, y: 0 }  // 右側の接続点
+        ],
+        isConnected: false // 接続されているかのフラグ
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else if (type === 'awaji' || type === 'ume'){
@@ -2765,6 +2897,21 @@ function updateMaterialsList() {
       listItem.appendChild(colorBox);
       listItem.appendChild(textSpan);
       materialsList.appendChild(listItem);
+    }
+  }
+}
+
+function checkConnection(shapeA, shapeB) {
+  for (let i = 0; i < shapeA.connectors.length; i++) {
+    let connA = shapeA.connectors[i];
+    for (let j = 0; j < shapeB.connectors.length; j++) {
+      let connB = shapeB.connectors[j];
+      let dist = dist(connA.x + shapeA.x, connA.y + shapeA.y, connB.x + shapeB.x, connB.y + shapeB.y);
+      if (dist < 10) { // 10ピクセル以内なら接続
+        shapeA.isConnected = shapeB.isConnected = true;
+        shapeA.connectedShape = shapeB; // 逆も設定
+        return;
+      }
     }
   }
 }
