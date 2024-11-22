@@ -232,11 +232,17 @@ let sketch1 = new p5((p) => {
                 //p.ellipse(connectorX, connectorY, 5);
 
                 // 距離が指定範囲内なら自動で接続
-                if (shape.isConnected == false && distance <= connectionDistance) {
+                if (shape.isConnected == null && otherShape.isConnected == null && distance <= connectionDistance) {
                   // 接続が成立した場合、接続情報を保存する
-                  shape.isConnected = true;
-                  otherShape.isConnected = true;
-                  console.log(`Connected ${shape} to ${otherShape}`);
+                  shape.isConnected = otherShape;
+                  otherShape.isConnected = shape;
+                  //console.log(`Connected ${shape} to ${otherShape}`);
+                } else if (shape.isConnected == otherShape && distance > connectionDistance) {
+                  shape.isConnected = null;
+                  otherShape.isConnected = null;
+                  //console.log(`Not connected ${shape} to ${otherShape}`);
+                }
+                if(shape.isConnected == otherShape) {
                   p.stroke(255, 0, 0); //赤色の接続線
                   p.strokeWeight(5);
                   let j=1;
@@ -248,10 +254,6 @@ let sketch1 = new p5((p) => {
                     p.line(connectorX, connectorY, otherConnectorX, otherConnectorY);  
                     j--;
                   }
-                } else if (shape.isConnected == true && distance > connectionDistance) {
-                  shape.isConnected = false;
-                  otherShape.isConnected = false;
-                  console.log(`Not connected ${shape} to ${otherShape}`);
                 }
               }    
             });
@@ -566,7 +568,7 @@ let sketch1 = new p5((p) => {
           { x: 10, y: 0 }, // 左側の接続点
           { x: -10, y: 0 }  // 右側の接続点
         ],
-        isConnected: false // 接続されているかのフラグ
+        isConnected: null // 接続されているかのフラグ
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else if (type === 'awaji' || type === 'ume'){
@@ -1333,7 +1335,7 @@ let sketch1 = new p5((p) => {
         dropLayerIndex = Array.from(layerList.children).indexOf(dropLayerItem);
         const dropShapeList = dropLayerItem.querySelector('.shape-list');
         dropShapeIndex = Array.from(dropShapeList.children).indexOf(dropTarget);
-      } else if (dropType === 'layerList') {
+      } else if (dropType === 'layerList') {//おそらく不要
         // 新しいレイヤーを作成
         dropLayerIndex = layers.length;
         layers.push({name: `Layer ${layers.length + 1}`, shapes: []});
@@ -1342,6 +1344,13 @@ let sketch1 = new p5((p) => {
       if (dropLayerIndex !== undefined) {
         const [draggedShape] = layers[layerIndex].shapes.splice(shapeIndex, 1);
         const [draggedCurveData] = innerCurvesData[layerIndex].splice(shapeIndex, 1); // innerCurvesData からも削除
+
+        // レイヤー移動した時に接続判定を切る
+        if (draggedShape.isConnected) {
+          const connectedShape = draggedShape.isConnected; // 接続相手の図形を取得
+          connectedShape.isConnected = null; // 接続相手の接続情報を解除
+          draggedShape.isConnected = null; // ドラッグされた図形の接続情報を解除
+        }
 
         if (dropShapeIndex === -1) {
             layers[dropLayerIndex].shapes.push(draggedShape);
