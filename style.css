@@ -128,6 +128,37 @@ main {
   width: 200px;
 }
 
+#cutting-button-container {
+  position: absolute;
+  left: 20px;
+  top: 430px;
+  display: flex;
+  flex-direction: row; /* 横並びに変更 */
+  justify-content: space-between; /* スペースを均等に配置 */
+  padding: 10px;
+}
+
+.cutting-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* テキストとボタンを左寄せ */
+  margin-right: 20px; /* 各ボタン間の間隔を調整 */
+}
+
+.cutting-container p {
+  margin-right: 10px; /* テキストとボタンの間隔 */
+  font-size: 16px;
+}
+
+#end-cutting-button, #middle-cutting-button {
+  padding: 5px;
+  font-size: 16px;
+}
+
+#cutting-button-container.hidden {
+  display: none;
+}
+
 #layer-menu {
   position: absolute;
   left: 10px;
@@ -154,7 +185,7 @@ main {
   margin: 0;
   background-color: #f1f1f1;
   border: 1px solid #ddd;
-  max-height: 400px;
+  max-height: 380px;
   overflow-y: auto;
 }
 

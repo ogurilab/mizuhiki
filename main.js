@@ -103,6 +103,7 @@ let sketch1 = new p5((p) => {
 
     p.documentClickHandler();
     p.setupRotationSlider();
+    p.setupCuttingButton();
 
     // レイヤーリストの初期化
     p.updateLayerList();
@@ -653,6 +654,32 @@ let sketch1 = new p5((p) => {
           //p.changeSelectedCurveColor(button.getAttribute('data-color'));
         }
       });
+    });
+  }
+
+  p.setupCuttingButton = function  () {
+    // ボタンの取得
+    let endCuttingButton = document.getElementById("end-cutting-button");
+    let middleCuttingButton = document.getElementById("middle-cutting-button");
+          
+    // 初期状態をボタンのテキストから取得
+    let isEndCuttingConnected = endCuttingButton.textContent === "接続" ? false : true;
+    let isMiddleCuttingConnected = middleCuttingButton.textContent === "接続" ? false : true;
+    
+    // 上部（端）のボタンのクリックイベント
+    endCuttingButton.addEventListener('click', () => {
+      isEndCuttingConnected = !isEndCuttingConnected; // 状態を反転
+      endCuttingButton.textContent = isEndCuttingConnected ? "切断" : "接続"; // 表示を更新
+      //console.log(`上部ボタンの状態: ${isEndCuttingConnected ? "切断" : "接続"}`);
+      selectedcustomizeShape.flags.end = !selectedcustomizeShape.flags.end;
+    });
+    
+    // 下部（中央）のボタンのクリックイベント
+    middleCuttingButton.addEventListener('click', () => {
+      isMiddleCuttingConnected = !isMiddleCuttingConnected; // 状態を反転
+      middleCuttingButton.textContent = isMiddleCuttingConnected ? "切断" : "接続"; // 表示を更新
+      //console.log(`下部ボタンの状態: ${isMiddleCuttingConnected ? "切断" : "接続"}`);
+      selectedcustomizeShape.flags.middle = !selectedcustomizeShape.flags.middle;
     });
   }
 
@@ -1498,6 +1525,7 @@ let sketch1 = new p5((p) => {
     // スライダーの値を選択した図形の回転度に設定
     document.getElementById('rotation-slider').value = selectedcustomizeShape.rotation;
 
+    document.getElementById('cutting-button-container').classList.remove('hidden');
     if (!mode2D) {
       document.getElementById('color-selector').classList.remove('hidden');
       document.getElementById('color-label').classList.remove('hidden');
@@ -1510,10 +1538,11 @@ let sketch1 = new p5((p) => {
     document.addEventListener('click', (event) => {
       let colorSelector = document.getElementById('color-selector');
       let rotationSlider = document.getElementById('rotation-slider-container');
+      let cuttingButton = document.getElementById("cutting-button-container");
       // クリックされたのがshapeItemでなければ選択解除
       if (customizeShapeIndex !== -1 && customizeLayerIndex !== -1) {
         // クリックされた場所がレイヤーリスト・カラー選択・スライダー以外か確認
-        if (!layerList.contains(event.target) && !colorSelector.contains(event.target) && !rotationSlider.contains(event.target)) {
+        if (!layerList.contains(event.target) && !colorSelector.contains(event.target) && !rotationSlider.contains(event.target) && !cuttingButton.contains(event.target)) {
           customizeShapeIndex = -1;
           customizeLayerIndex = -1;
 
@@ -1522,6 +1551,7 @@ let sketch1 = new p5((p) => {
           if (!mode2D){// カラー選択を非表示に
             colorSelector.classList.add('hidden');
           }
+          cuttingButton.classList.add('hidden');
         }
       }
     });
@@ -2679,7 +2709,6 @@ function drawCurveFromPoints(p, curves) {
   p.curveVertex(pts[pts.length-1].x, pts[pts.length-1].y, pts[pts.length-1].z);
   p.endShape();
   */
-console.log(curves);
   if (Array.isArray(curves[0])) {
     // 複数のカーブ（curves は配列の配列）
     curves.forEach((curve) => {
@@ -3128,8 +3157,9 @@ function adjustControlPoints(shape) {
   }
   //let adjusted = points;
   let adjusted = JSON.parse(JSON.stringify(points));  // ディープコピー
-  shape.flags.end = true;
-  shape.flags.middle = true;
+  //shape.flags.end = false;
+  //shape.flags.middle = true;
+  //console.log(shape.flags.end, shape.flags.middle);
 
   // 中央の切断
   if (shape.flags.middle && adjusted.length > 2) {
@@ -3142,18 +3172,18 @@ function adjustControlPoints(shape) {
       // 各要素を展開して中央に挿入
       adjusted.splice(midIndex, 0, ...middlePoint);
     }
-    console.log(adjusted, points);
+    //console.log(adjusted, points);
     midIndex = Math.floor(adjusted.length / 2);
     // カーブを中央で分割
     const firstCurve = adjusted.slice(0, midIndex );
     const secondCurve = adjusted.slice(midIndex);
-    console.log([firstCurve, secondCurve]);
+    //console.log([firstCurve, secondCurve]);
     // firstCurve の後ろから2番目のポイントを削除
     firstCurve.splice(firstCurve.length - 2, 1);
 
     // secondCurve の最初から2番目のポイントを削除
     secondCurve.splice(1, 1);
-    console.log('2', [firstCurve, secondCurve]);
+    //console.log('2', [firstCurve, secondCurve]);
     //return [firstCurve, secondCurve];
     adjusted[0] = firstCurve;
     adjusted[1] = secondCurve;
@@ -3170,7 +3200,7 @@ function adjustControlPoints(shape) {
       adjusted = adjusted.concat(endPoints[shape.type]);// endPoints[shape.type] 配列を後ろに結合
     }
   }
-  console.log(adjusted, points);
+  //console.log(adjusted, points);
   //console.log('1');
   if (Array.isArray(adjusted[0])) {//切断された場合
     return [adjusted[0], adjusted[1]];
