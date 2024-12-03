@@ -317,9 +317,29 @@ let sketch1 = new p5((p) => {
         p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
       }
       
+      const renderedConnections = new Set(); // 描画済み接続を記録
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
-          drawShape(p, shape, layerIndex, index, 0, -1);
+
+          // 
+          let adjustedPoints = adjustControlPoints(shape);
+  
+          if (shape.isConnected == null) {
+            drawShape(p, shape, layerIndex, index, 0, -1, adjustedPoints);
+          } else {
+            //drawConnect(p, shape, layerIndex, index);
+            // 接続されている図形の描画
+            const shape2 = shape.isConnected;
+
+            // 接続ペアを一意に識別するために文字列を生成
+            const connectionKey = `${Math.min(shape.id, shape2.id)}-${Math.max(shape.id, shape2.id)}`;
+
+            if (!renderedConnections.has(connectionKey)) {
+                // 未描画の接続のみ描画
+                drawConnect(p, shape, shape2, layerIndex, index, adjustedPoints);
+                renderedConnections.add(connectionKey);
+            }
+          }
         });
       });    
       
@@ -568,7 +588,11 @@ let sketch1 = new p5((p) => {
           { x: 10, y: 0 }, // 左側の接続点
           { x: -10, y: 0 }  // 右側の接続点
         ],
-        isConnected: null // 接続されているかのフラグ
+        isConnected: null, // 接続されているかのフラグ
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
     } else if (type === 'awaji' || type === 'ume'){
@@ -580,6 +604,10 @@ let sketch1 = new p5((p) => {
         d: shapeDiameter,
         scale: shapeDiameter / 300,
         rotation: 0,
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
         //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
     } else if (type === 'aioien'){
@@ -1569,7 +1597,7 @@ function initializeTab2() {
       let indexCounter = 0;
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, shapeIndex) => {
-          drawShape(p, shape, layerIndex, shapeIndex, 0, -1);
+          drawShape(p, shape, layerIndex, shapeIndex, 0, -1, null);
           indexCounter++;
         });
       });
@@ -1640,7 +1668,7 @@ function initializeTab2() {
         p.draw = function() {
           p.background(250);
           p.orbitControl();
-          drawShape(p, shape, layerIndex, shapeIndex, 1, -1);  // 個別の形状を描画
+          drawShape(p, shape, layerIndex, shapeIndex, 1, -1, null);  // 個別の形状を描画
         }
       }, canvasWrapper);
       partsSketches.push(sketch);
@@ -1740,7 +1768,7 @@ function initializeTab2() {
             p.orbitControl();
             // 制御点に基づくカーブ描画やパーツの描画をここで行う
             // 現在の processNo に基づいて制御点を取得、描画
-            drawShape(p, shape, layerIndex, shapeIndex, 1, processNo);
+            drawShape(p, shape, layerIndex, shapeIndex, 1, processNo, null);
           };
         }, modalCanvasContainer);
        
@@ -1816,7 +1844,7 @@ function drawAxis(p) {
   p.line(0, 0, -400, 0, 0, 400);
 }
 
-function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
+function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
   p.push();
   if (parts_f == 1) {
     p.translate(0, 0, 0);
@@ -1839,10 +1867,14 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     } else if (shape.type === 'aioien') {
       scaleValue = shape.scale * 1.3;
       points = aioien_points;
+    } else if (shape.type === 'connect') {
+      points = point;
+      console.log(points)
     }
   } else {
     points = getProcessPoints(shape.type, processNo);
   }
+  points = point;// とりあえず
   p.scale(scaleValue);
   
   let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
@@ -1852,6 +1884,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
     p.strokeWeight(shape.innerCurveWeight);
   }
   let shapeInnerCurves = [];
+  /*
   for (let i = 0; i < innerCurves.length; i++) {
     let color;
     if (innerCurvesData[layerIndex]&&innerCurvesData[layerIndex][shapeIndex] && innerCurvesData[layerIndex][shapeIndex][i]) {// インナーカーブに色が設定してあれば
@@ -1872,6 +1905,43 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo) {
       color: color
     });
   }
+  */
+
+// innerCurves が複数のカーブを含む配列を想定
+innerCurves.forEach((curveSet, curveSetIndex) => {
+  curveSet.forEach((curve, curveIndex) => {
+    //console.log(curveSet);
+    let color;
+
+    if (
+      innerCurvesData[layerIndex] &&
+      innerCurvesData[layerIndex][shapeIndex] &&
+      innerCurvesData[layerIndex][shapeIndex][curveIndex]
+    ) {
+      // インナーカーブに色が設定されていれば
+      color = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
+    } else {
+      // 設定されていなければ図形の色で
+      color = shape.color;
+    }
+
+    // 色を適用
+    if (typeof color === 'string') {
+      p.stroke(color);
+    } else {
+      p.stroke(color.r, color.g, color.b);
+    }
+
+    // カーブを描画
+    drawCurveFromPoints(p, curve);
+
+    // 描画データを保存
+    shapeInnerCurves.push({
+      points: curve,
+      color: color
+    });
+  });
+});
   
   // `innerCurvesData[layerIndex]` が存在しない場合は初期化
   if (!innerCurvesData[layerIndex]) {
@@ -2481,6 +2551,20 @@ const partsPoints = {
   }
 };
 
+const endPoints = {
+  awaji: [
+    { x: -30, y: -65, z: 8 },
+    { x: 30, y: -65, z: -8 },
+    { x: 60, y: -30, z: -5 },
+  ]
+}
+
+const middlePoints = {
+  awaji: [
+    { x: 90, y: 90, z: 0 },
+    { x: -90, y: 90, z: 0 }
+  ]
+}
 function getTotalProcesses(type) {
   const selectedParts = partsPoints[type];
   return Object.keys(selectedParts).length;
@@ -2584,7 +2668,9 @@ function generateRenzokuPoints(n) {
   }
 }
 
-function drawCurveFromPoints(p, pts) {
+//function drawCurveFromPoints(p, pts) {
+function drawCurveFromPoints(p, curves) {
+  /*
   p.beginShape();
   p.curveVertex(pts[0].x, pts[0].y, pts[0].z);
   for (let pt of pts) {
@@ -2592,10 +2678,34 @@ function drawCurveFromPoints(p, pts) {
   }
   p.curveVertex(pts[pts.length-1].x, pts[pts.length-1].y, pts[pts.length-1].z);
   p.endShape();
+  */
+console.log(curves);
+  if (Array.isArray(curves[0])) {
+    // 複数のカーブ（curves は配列の配列）
+    curves.forEach((curve) => {
+      p.beginShape();
+      p.curveVertex(curve[0].x, curve[0].y, curve[0].z || 0);
+      curve.forEach((pt) => {
+        p.curveVertex(pt.x, pt.y, pt.z || 0);
+      });
+      p.curveVertex(curve[curve.length - 1].x, curve[curve.length - 1].y, curve[curve.length - 1].z || 0);
+      p.endShape();
+    });
+  } else {
+    // 単一のカーブ（curves は点群の配列）
+    p.beginShape();
+    p.curveVertex(curves[0].x, curves[0].y, curves[0].z || 0);
+    curves.forEach((pt) => {
+      p.curveVertex(pt.x, pt.y, pt.z || 0);
+    });
+    p.curveVertex(curves[curves.length - 1].x, curves[curves.length - 1].y, curves[curves.length - 1].z || 0);
+    p.endShape();
+  }
 }
 
 function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCurveWeight) {
   let innerCurves = [];
+  /*
   let curveWidth = outerCurveWeight;
 
   if (numInnerCurves == 1) {
@@ -2606,7 +2716,36 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
       innerCurves.push(createOffsetCurve(p, points, offset));
     }
   }
-  return innerCurves;
+  */
+
+  points.forEach((curve) => {
+    let curveSet = []; // 各カーブセットを保持する配列
+
+    // numInnerCurves によってインナーカーブの数を決定
+    if (numInnerCurves === 1) {
+      // インナーカーブが1本の場合
+      curveSet.push(createOffsetCurve(p, curve, 0)); // オフセット無し
+    } else {
+      // 複数のインナーカーブがある場合
+      for (let i = 0; i < numInnerCurves; i++) {
+        // インナーカーブごとにオフセットを設定
+        let offset = p.map(
+          i,
+          0,
+          numInnerCurves - 1,
+          -outerCurveWeight / 2 + innerCurveWeight / 2,
+          outerCurveWeight / 2 - innerCurveWeight / 2
+        );
+        curveSet.push(createOffsetCurve(p, curve, offset)); // オフセットを使ってカーブを生成
+      }
+    }
+
+    // 各カーブセットを innerCurves に追加
+    innerCurves.push(curveSet);
+  });
+
+  //console.log(innerCurves);
+  return innerCurves; // [[innerCurves1], [innerCurves2]] の形で返す
 }
 
 //指定されたオフセットに基づいて元の曲線を変形
@@ -2900,17 +3039,143 @@ function updateMaterialsList() {
   }
 }
 
-function checkConnection(shapeA, shapeB) {
-  for (let i = 0; i < shapeA.connectors.length; i++) {
-    let connA = shapeA.connectors[i];
-    for (let j = 0; j < shapeB.connectors.length; j++) {
-      let connB = shapeB.connectors[j];
-      let dist = dist(connA.x + shapeA.x, connA.y + shapeA.y, connB.x + shapeB.x, connB.y + shapeB.y);
-      if (dist < 10) { // 10ピクセル以内なら接続
-        shapeA.isConnected = shapeB.isConnected = true;
-        shapeA.connectedShape = shapeB; // 逆も設定
-        return;
-      }
+function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
+  let shape2 = shape1.isConnected;
+  console.log(shape2);
+
+    // shape1 をディープコピー
+    const newShape = deepCopyWithoutConnection(shape1);
+
+    // 新しい形状のプロパティを上書き
+    newShape.type = 'connect';
+    newShape.x = (shape1.x + shape2.x) / 2;
+    newShape.y = (shape1.y + shape2.y) / 2;
+    newShape.rotation = 0; // 必要に応じて回転を設定
+    newShape.connectors = []; // 接続情報をリセット
+
+    // 初期化
+    let points1 = [];
+    let points2 = [];
+    let combinedPoints = [];
+    let scaleValue = shape1.scale;
+
+    // shape1 の制御点を取得
+    if (shape1.type === 'awaji') {
+        points1 = awaji_points;
+    } else if (shape1.type === 'ume') {
+        points1 = ume_points;
+    } else if (shape1.type === 'renzoku') {
+        const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55];
+        scaleValue = shape1.scale * scaleFactors[shape1.renzokuNum];
+        points1 = renzokuAwaji(shape1.renzokuNum);
+    } else if (shape1.type === 'aioien') {
+        scaleValue = shape1.scale * 1.3;
+        points1 = aioien_points;
+    }
+
+    // shape2 の制御点を取得
+    if (shape2.type === 'awaji') {
+        points2 = awaji_points;
+    } else if (shape2.type === 'ume') {
+        points2 = ume_points;
+    } else if (shape2.type === 'renzoku') {
+        const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55];
+        scaleValue = shape2.scale * scaleFactors[shape2.renzokuNum];
+        points2 = renzokuAwaji(shape2.renzokuNum);
+    } else if (shape2.type === 'aioien') {
+        scaleValue = shape2.scale * 1.3;
+        points2 = aioien_points;
+    }
+
+    // 制御点を結合
+    combinedPoints = [...points1, ...points2];
+    newShape.points = combinedPoints;
+
+    // 新しい図形の作成
+    
+
+    // 新しい図形をレイヤーに追加
+    //layers[layerIndex].shapes.push(newShape);
+  console.log(newShape);
+  drawShape(p, newShape, layerIndex, index, 0, -1, combinedPoints);
+}
+
+// 通常のディープコピーだとisConnectedで無限ループに陥るためこれをスキップ
+function deepCopyWithoutConnection(obj) {
+  const copy = Array.isArray(obj) ? [] : {};
+  for (const key in obj) {
+      if (key === 'isConnected') continue; // isConnected をスキップ
+      const value = obj[key];
+      copy[key] = typeof value === 'object' && value !== null ? deepCopyWithoutConnection(value) : value;
+  }
+  return copy;
+}
+
+// フラグに基づいて制御点を調整する関数(shapeを入力することで切断処理後のポイントを返す関数)
+function adjustControlPoints(shape) {
+  
+  if (shape.type === 'awaji') {
+    points = awaji_points;
+  } else if (shape.type === 'ume') {
+    points = ume_points;
+  } else if (shape.type === 'renzoku') {
+    const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55];
+    scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+    points = renzokuAwaji(shape.renzokuNum);
+  } else if (shape.type === 'aioien') {
+    scaleValue = shape.scale * 1.3;
+    points = aioien_points;
+  }
+  //let adjusted = points;
+  let adjusted = JSON.parse(JSON.stringify(points));  // ディープコピー
+  shape.flags.end = true;
+  shape.flags.middle = true;
+
+  // 中央の切断
+  if (shape.flags.middle && adjusted.length > 2) {
+    let midIndex = Math.floor(adjusted.length / 2);
+
+    // 中央の挿入ポイントを取得
+    let middlePoint = middlePoints[shape.type];
+
+    if (middlePoint) {
+      // 各要素を展開して中央に挿入
+      adjusted.splice(midIndex, 0, ...middlePoint);
+    }
+    console.log(adjusted, points);
+    midIndex = Math.floor(adjusted.length / 2);
+    // カーブを中央で分割
+    const firstCurve = adjusted.slice(0, midIndex );
+    const secondCurve = adjusted.slice(midIndex);
+    console.log([firstCurve, secondCurve]);
+    // firstCurve の後ろから2番目のポイントを削除
+    firstCurve.splice(firstCurve.length - 2, 1);
+
+    // secondCurve の最初から2番目のポイントを削除
+    secondCurve.splice(1, 1);
+    console.log('2', [firstCurve, secondCurve]);
+    //return [firstCurve, secondCurve];
+    adjusted[0] = firstCurve;
+    adjusted[1] = secondCurve;
+  }
+  if (!shape.flags.end) {
+    if (Array.isArray(adjusted[0])) {//切断された場合
+      adjusted[0].shift();// adjusted配列の最初の要素を削除
+      adjusted[1].pop();// adjusted配列の最後の要素を削除
+      adjusted[1] = adjusted[1].concat(endPoints[shape.type]);// endPoints[shape.type] 配列を後ろに結合
+    } else {
+      //adjusted.push(points[0]); // 最初の点を最後に追加
+      adjusted.shift();// adjusted配列の最初の要素を削除
+      adjusted.pop();// adjusted配列の最後の要素を削除
+      adjusted = adjusted.concat(endPoints[shape.type]);// endPoints[shape.type] 配列を後ろに結合
     }
   }
+  console.log(adjusted, points);
+  //console.log('1');
+  if (Array.isArray(adjusted[0])) {//切断された場合
+    return [adjusted[0], adjusted[1]];
+  } else {
+    return [adjusted];
+  }
+  //return [adjusted];
 }
