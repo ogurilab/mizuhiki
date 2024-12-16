@@ -337,7 +337,7 @@ let sketch1 = new p5((p) => {
 
             if (!renderedConnections.has(connectionKey)) {
                 // 未描画の接続のみ描画
-                drawConnect(p, shape, shape2, layerIndex, index, adjustedPoints);
+                drawConnect(p, shape, layerIndex, index, adjustedPoints);
                 renderedConnections.add(connectionKey);
             }
           }
@@ -1882,6 +1882,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
     p.translate(shape.x - p.width/2, shape.y - p.height/2, shape.zIndex);
     p.rotateZ(p.radians(shape.rotation));
   }
+  
   let scaleValue = shape.scale * 1.62;// 初期値
   //console.log(shape.x, shape.y); 
   let points;
@@ -2753,6 +2754,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
     // numInnerCurves によってインナーカーブの数を決定
     if (numInnerCurves === 1) {
       // インナーカーブが1本の場合
+  console.log(curve);
       curveSet.push(createOffsetCurve(p, curve, 0)); // オフセット無し
     } else {
       // 複数のインナーカーブがある場合
@@ -2765,6 +2767,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
           -outerCurveWeight / 2 + innerCurveWeight / 2,
           outerCurveWeight / 2 - innerCurveWeight / 2
         );
+        console.log(curve);
         curveSet.push(createOffsetCurve(p, curve, offset)); // オフセットを使ってカーブを生成
       }
     }
@@ -2779,6 +2782,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
 
 //指定されたオフセットに基づいて元の曲線を変形
 function createOffsetCurve(p, originalCurve, offset) {
+  console.log(originalCurve);
   return originalCurve.map((pt, index) => {
     let prev, next;
 
@@ -3116,8 +3120,57 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
         points2 = aioien_points;
     }
 
+    //サイズ調整
+    points1 = points1.map(p => ({
+      x: p.x * shape1.scale * 1.62, 
+      y: p.y * shape1.scale * 1.62, 
+      z: p.z * shape1.scale * 1.62
+    }));
+    points2 = points2.map(p => ({
+      x: p.x * shape2.scale * 1.62, 
+      y: p.y * shape2.scale * 1.62, 
+      z: p.z * shape2.scale * 1.62
+    }));
+
+    // 回転を考慮して、shape1 の回転角を各制御点に適用
+    const rotateShape1 = (points) => {
+      return points.map(point => {
+        // 形状の回転を適用
+        const angle = p.radians(shape1.rotation);
+        const cosAngle = Math.cos(angle);
+        const sinAngle = Math.sin(angle);
+        const xNew = cosAngle * point.x - sinAngle * point.y;
+        const yNew = sinAngle * point.x + cosAngle * point.y;
+        return { x: xNew, y: yNew, z: point.z }; // z軸の値はそのまま
+      });
+    };
+
+    // shape2 の制御点を shape1 基準に調整
+    const adjustedPoints2 = points2.map(point => ({
+      x: point.x + (shape2.x - shape1.x),
+      y: point.y + (shape2.y - shape1.y),
+      z: point.z // z座標はそのまま保持
+    }));
+
+    // shape2 の回転も考慮
+    const rotateShape2 = (points) => {
+      return points.map(point => {
+        // shape2 の回転角を適用
+        const angle = p.radians(shape2.rotation);
+        const cosAngle = Math.cos(angle);
+        const sinAngle = Math.sin(angle);
+        const xNew = cosAngle * point.x - sinAngle * point.y;
+        const yNew = sinAngle * point.x + cosAngle * point.y;
+        return { x: xNew, y: yNew, z: point.z }; // z軸の値はそのまま
+      });
+    };
+
+    // 回転後の制御点を取得
+    const rotatedPoints1 = rotateShape1(points1);
+    const rotatedPoints2 = rotateShape2(adjustedPoints2);
+
     // 制御点を結合
-    combinedPoints = [...points1, ...points2];
+    combinedPoints = [[...rotatedPoints1, ...rotatedPoints2]];
     newShape.points = combinedPoints;
 
     // 新しい図形の作成
