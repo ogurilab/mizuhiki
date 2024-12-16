@@ -3161,6 +3161,10 @@ function adjustControlPoints(shape) {
   //shape.flags.middle = true;
   //console.log(shape.flags.end, shape.flags.middle);
 
+  let type = shape.type;//reuzokuでawajiを使いたいため
+  if (shape.type === 'renzoku') {
+    type = 'awaji';
+  }
   // 中央の切断
   if (shape.flags.middle && adjusted.length > 2) {
     let midIndex = Math.floor(adjusted.length / 2);
@@ -3170,11 +3174,20 @@ function adjustControlPoints(shape) {
 
     if (middlePoint) {
       // 各要素を展開して中央に挿入
-      adjusted.splice(midIndex, 0, ...middlePoint);
+      if (shape.type === 'renzoku') {
+        let addY = shape.renzokuNum * 60 - 60;
+        adjusted.splice(midIndex, 0, ...middlePoint.map(point => ({ 
+          ...point, 
+          y: point.y + addY 
+        })));
+      } else{
+        adjusted.splice(midIndex, 0, ...middlePoint);
+      }
     }
     //console.log(adjusted, points);
-    midIndex = Math.floor(adjusted.length / 2);
+
     // カーブを中央で分割
+    midIndex = Math.floor(adjusted.length / 2);
     const firstCurve = adjusted.slice(0, midIndex );
     const secondCurve = adjusted.slice(midIndex);
     //console.log([firstCurve, secondCurve]);
@@ -3192,14 +3205,35 @@ function adjustControlPoints(shape) {
     if (Array.isArray(adjusted[0])) {//切断された場合
       adjusted[0].shift();// adjusted配列の最初の要素を削除
       adjusted[1].pop();// adjusted配列の最後の要素を削除
-      adjusted[1] = adjusted[1].concat(endPoints[shape.type]);// endPoints[shape.type] 配列を後ろに結合
+      if (shape.type === 'renzoku') {
+        let addY = shape.renzokuNum * 60 - 60;
+        adjusted[1] = adjusted[1].concat(
+          endPoints[type].map(point => ({ 
+            ...point, 
+            y: point.y - addY 
+          }))
+        );
+      } else {
+        adjusted[1] = adjusted[1].concat(endPoints[type]);// endPoints[shape.type] 配列を後ろに結合
+      }
     } else {
       //adjusted.push(points[0]); // 最初の点を最後に追加
       adjusted.shift();// adjusted配列の最初の要素を削除
       adjusted.pop();// adjusted配列の最後の要素を削除
-      adjusted = adjusted.concat(endPoints[shape.type]);// endPoints[shape.type] 配列を後ろに結合
+      if (shape.type === 'renzoku') {
+        let addY = shape.renzokuNum * 60 - 80;
+        adjusted = adjusted.concat(
+          endPoints[type].map(point => ({ 
+            ...point, 
+            y: point.y - addY 
+          }))
+        );// endPoints[shape.type] 配列を後ろに結合
+      } else {
+        adjusted = adjusted.concat(endPoints[type]);// endPoints[shape.type] 配列を後ろに結合
+      }
     }
   }
+  console.log(type, shape.type);
   //console.log(adjusted, points);
   //console.log('1');
   if (Array.isArray(adjusted[0])) {//切断された場合
