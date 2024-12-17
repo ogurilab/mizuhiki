@@ -38,6 +38,8 @@ let innerCurveColors = [
   { r: 165, g: 42, b: 42 },
   { r: 165, g: 42, b: 42 },
 ]
+let id = 0;
+let selectedcustomizeShape = null;
 
 let sketch1 = new p5((p) => {
   let canvas;
@@ -66,7 +68,6 @@ let sketch1 = new p5((p) => {
   let slider; // スライダーの変数
   let customizeShapeIndex = -1;
   let customizeLayerIndex = -1;
-  let selectedcustomizeShape = null;
 
   p.setup = function() {
     canvas = p.createCanvas(800, 800);
@@ -113,7 +114,7 @@ let sketch1 = new p5((p) => {
     p.background(250);
     //console.log(layers);
     if (mode2D) {
-      let connectionDistance = 10; // 接続判定の距離
+      let connectionDistance = 20; // 接続判定の距離
       p.push();
       //resetMatrix(); // 座標系をリセット  
       if (mode2D_f == 1) {
@@ -211,56 +212,120 @@ let sketch1 = new p5((p) => {
         layer.shapes.forEach(shape => {
           if (shape.connectors) {
             layer.shapes.forEach(otherShape => {
-              if (shape !== otherShape && otherShape.connectors ) {
-                // 各接続点の座標を計算
-                let connector = {
-                  x: (shape.connectors[0].x + shape.connectors[1].x) / 2,
-                  y: (shape.connectors[0].y + shape.connectors[1].y) / 2
-                };
-                let connectorX = shape.x + connector.x * Math.cos(p.radians(shape.rotation)) - (connector.y - 0) * Math.sin(p.radians(shape.rotation));
-                let connectorY = shape.y + connector.x * Math.sin(p.radians(shape.rotation)) + (connector.y - 0) * Math.cos(p.radians(shape.rotation));
-                
-                let otherConnector = {
-                  x: (otherShape.connectors[0].x + otherShape.connectors[1].x) / 2,
-                  y: (otherShape.connectors[0].y + otherShape.connectors[1].y) / 2
-                };
-                let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - (otherConnector.y - 0) * Math.sin(p.radians(otherShape.rotation));
-                let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + (otherConnector.y - 0) * Math.cos(p.radians(otherShape.rotation));
+              if (shape !== otherShape && otherShape.connectors) {
+                shape.connectors.forEach((connectorSet, setIndex) => {
+                  // 現在の接続セットの中間点を計算
+                  let connector = {
+                    x: (connectorSet.points[0].x + connectorSet.points[1].x) / 2,
+                    y: (connectorSet.points[0].y + connectorSet.points[1].y) / 2
+                  };
+                  let connectorX = shape.x + connector.x * Math.cos(p.radians(shape.rotation)) - connector.y * Math.sin(p.radians(shape.rotation));
+                  let connectorY = shape.y + connector.x * Math.sin(p.radians(shape.rotation)) + connector.y * Math.cos(p.radians(shape.rotation));
+      
+                  otherShape.connectors.forEach((otherConnectorSet, otherSetIndex) => {
+                    // 他の図形の接続セットの中間点を計算
+                    let otherConnector = {
+                      x: (otherConnectorSet.points[0].x + otherConnectorSet.points[1].x) / 2,
+                      y: (otherConnectorSet.points[0].y + otherConnectorSet.points[1].y) / 2
+                    };
+                    let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - otherConnector.y * Math.sin(p.radians(otherShape.rotation));
+                    let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + otherConnector.y * Math.cos(p.radians(otherShape.rotation));
+                    
+                    //p.ellipse(connectorX, connectorY, 5);
+                    //console.log(connectorSet.isConnected);
+                    // 距離を計算
+                    let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
+                    //console.log(connectorSet.isConnected, otherConnectorSet.isConnected);
+                    // 接続距離内で接続されていない場合、自動接続
+                    if (connectorSet.isConnected == null && otherConnectorSet.isConnected == null && distance <= connectionDistance) {
+                      connectorSet.isConnected = { shape: otherShape, setIndex: otherSetIndex };
+                      otherConnectorSet.isConnected = { shape: shape, setIndex: setIndex };
+                      if (setIndex == 0) {
+                        shape.flags.end = true;
+                      } else {
+                        shape.flags.middle = true;
+                      }
+                      if (otherSetIndex == 0) {
+                        otherShape.flags.end = true;
+                      } else {
+                        otherShape.flags.middle = true;
+                      }
+                    } else if (connectorSet.isConnected?.shape === otherShape && connectorSet.isConnected?.setIndex === otherSetIndex && distance > connectionDistance) {
+                      // 距離が範囲外の場合、接続解除
+                      connectorSet.isConnected = null;
+                      otherConnectorSet.isConnected = null;
+                    }
 
-                // 距離を計算
-                let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
-                //console.log(shape.isConnected+ ' '+shape.color);
-                //p.ellipse(connectorX, connectorY, 5);
-
-                // 距離が指定範囲内なら自動で接続
-                if (shape.isConnected == null && otherShape.isConnected == null && distance <= connectionDistance) {
-                  // 接続が成立した場合、接続情報を保存する
-                  shape.isConnected = otherShape;
-                  otherShape.isConnected = shape;
-                  //console.log(`Connected ${shape} to ${otherShape}`);
-                } else if (shape.isConnected == otherShape && distance > connectionDistance) {
-                  shape.isConnected = null;
-                  otherShape.isConnected = null;
-                  //console.log(`Not connected ${shape} to ${otherShape}`);
-                }
-                if(shape.isConnected == otherShape) {
-                  p.stroke(255, 0, 0); //赤色の接続線
-                  p.strokeWeight(5);
-                  let j=1;
-                  for (let i = 0; i < 2; i++) {
-                    let connectorX = shape.x + shape.connectors[i].x * Math.cos(p.radians(shape.rotation)) - (shape.connectors[i].y - 15) * Math.sin(p.radians(shape.rotation));
-                    let connectorY = shape.y + shape.connectors[i].x * Math.sin(p.radians(shape.rotation)) + (shape.connectors[i].y - 15) * Math.cos(p.radians(shape.rotation));
-                    let otherConnectorX = otherShape.x + otherShape.connectors[j].x * Math.cos(p.radians(otherShape.rotation)) - (otherShape.connectors[j].y - 15) * Math.sin(p.radians(otherShape.rotation));
-                    let otherConnectorY = otherShape.y + otherShape.connectors[j].x * Math.sin(p.radians(otherShape.rotation)) + (otherShape.connectors[j].y - 15) * Math.cos(p.radians(otherShape.rotation));
-                    p.line(connectorX, connectorY, otherConnectorX, otherConnectorY);  
-                    j--;
-                  }
-                }
-              }    
+                    if (selectedcustomizeShape) {
+                      let endCuttingButton = document.getElementById("end-cutting-button");
+                      let middleCuttingButton = document.getElementById("middle-cutting-button");
+                      if (selectedcustomizeShape === shape && connectorSet.isConnected?.shape === otherShape) { 
+                        if (setIndex == 0) {
+                          endCuttingButton.disabled = true; // ボタン無効化
+                        } else {
+                          middleCuttingButton.disabled = true; // ボタン無効化
+                        }
+                      } else if (selectedcustomizeShape === shape && connectorSet.isConnected === null) {
+                        endCuttingButton.disabled = false; // ボタン有効化
+                        middleCuttingButton.disabled = false; // ボタン有効化
+                      } else if (selectedcustomizeShape === otherShape && otherConnectorSet.isConnected?.shape === shape) {
+                        if (otherSetIndex == 0) {
+                          endCuttingButton.disabled = true; // ボタン無効化
+                        } else {
+                          middleCuttingButton.disabled = true; // ボタン無効化
+                        } 
+                      } else if (selectedcustomizeShape === otherShape && otherConnectorSet.isConnected === null) {
+                        endCuttingButton.disabled = false; // ボタン有効化
+                        middleCuttingButton.disabled = false; // ボタン有効化
+                      }
+                    }
+      
+                    // 接続状態を描画
+                    if (connectorSet.isConnected?.shape === otherShape &&
+                      connectorSet.isConnected?.setIndex === otherSetIndex) {
+                      // 接続点ごとに接続線を描画
+                      for (let i = 0; i < 2; i++) {
+                        // shape の接続点の座標を計算
+                        let connectorX = shape.x + connectorSet.points[i].x * Math.cos(p.radians(shape.rotation)) - connectorSet.points[i].y * Math.sin(p.radians(shape.rotation));
+                        let connectorY = shape.y + connectorSet.points[i].x * Math.sin(p.radians(shape.rotation)) + connectorSet.points[i].y * Math.cos(p.radians(shape.rotation));
+                    
+                        // otherShape の接続点の座標を計算
+                        let distances = []; // 距離を保存する配列
+                    
+                        // 左右の接続点ごとに距離を計算
+                        for (let j = 0; j < 2; j++) {
+                          let otherConnectorX = otherShape.x + otherConnectorSet.points[j].x * Math.cos(p.radians(otherShape.rotation)) - otherConnectorSet.points[j].y * Math.sin(p.radians(otherShape.rotation));
+                          let otherConnectorY = otherShape.y + otherConnectorSet.points[j].x * Math.sin(p.radians(otherShape.rotation)) + otherConnectorSet.points[j].y * Math.cos(p.radians(otherShape.rotation));
+                    
+                          // 現在の接続点と他の接続点の距離を計算
+                          let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
+                          distances.push({ j, distance });
+                        }
+                    
+                        // 最も近い接続点を選択
+                        distances.sort((a, b) => a.distance - b.distance);
+                        let closestConnector = distances[0]; // 最も近い接続点ペア
+                    
+                        // 最も近い接続点同士を接続
+                        let closestOtherConnectorX = otherShape.x + otherConnectorSet.points[closestConnector.j].x * Math.cos(p.radians(otherShape.rotation)) - otherConnectorSet.points[closestConnector.j].y * Math.sin(p.radians(otherShape.rotation));
+                        let closestOtherConnectorY = otherShape.y + otherConnectorSet.points[closestConnector.j].x * Math.sin(p.radians(otherShape.rotation)) + otherConnectorSet.points[closestConnector.j].y * Math.cos(p.radians(otherShape.rotation));
+                    
+                        // 接続線を描画
+                        p.push();
+                        p.stroke(255, 0, 0); // 赤色の接続線
+                        p.strokeWeight(5);
+                        p.line(connectorX, connectorY, closestOtherConnectorX, closestOtherConnectorY);
+                        p.pop();
+                      }
+                    }
+                  });
+                });
+              }
             });
           }
         });
       });
+      
       // サイズを変更する処理
       if (resizing) {
         p.resizeShape(resizing);
@@ -324,25 +389,45 @@ let sketch1 = new p5((p) => {
 
           // 
           let adjustedPoints = adjustControlPoints(shape);
-  
-          if (shape.isConnected == null) {
-            drawShape(p, shape, layerIndex, index, 0, -1, adjustedPoints);
-          } else {
-            //drawConnect(p, shape, layerIndex, index);
-            // 接続されている図形の描画
-            const shape2 = shape.isConnected;
 
-            // 接続ペアを一意に識別するために文字列を生成
-            const connectionKey = `${Math.min(shape.id, shape2.id)}-${Math.max(shape.id, shape2.id)}`;
-
-            if (!renderedConnections.has(connectionKey)) {
-                // 未描画の接続のみ描画
-                drawConnect(p, shape, layerIndex, index, adjustedPoints);
-                renderedConnections.add(connectionKey);
+          let connected = false;
+          // connectors 内の isConnected フラグを確認して、接続されているかをチェック
+          if (shape.connectors) {
+            for (let connectorSet of shape.connectors) {
+              for (let i = 0; i < 2; i++) {
+                //console.log(connectorSet);
+                if (connectorSet.isConnected !== null) {
+                  connected = true;
+                  break;
+                }
+              }
+              if (connected) break;
             }
           }
+  
+          if (!connected) {
+            drawShape(p, shape, layerIndex, index, 0, -1, adjustedPoints);
+          } else {
+            // 接続されている図形の描画
+            shape.connectors.forEach((connectorSet, setIndex) => {
+              // 接続先の図形を探す
+              if (connectorSet.isConnected?.shape) {
+                const shape2 = connectorSet.isConnected.shape;
+      
+                // 接続ペアを一意に識別するために文字列を生成
+                const connectionKey = `${Math.min(shape.id, shape2.id)}-${Math.max(shape.id, shape2.id)}`;
+      
+                if (!renderedConnections.has(connectionKey)) {
+                  // 未描画の接続のみ描画
+                  drawConnect(p, shape, layerIndex, index, adjustedPoints);
+                  renderedConnections.add(connectionKey);
+                }
+              }
+            });
+          }
         });
-      });    
+      });   
+      //console.log(renderedConnections); 
       
       if (cameraFixed) {
         //p.drawLabels();
@@ -470,27 +555,47 @@ let sketch1 = new p5((p) => {
     p.rectMode(p.CENTER);
     p.rect(x, y, w, l);
     // 接続点の描画
+    for (let setIndex = 0; setIndex < shape.connectors.length; setIndex++) {
+      const connectorSet = shape.connectors[setIndex];
+      for (let pointIndex = 0; pointIndex < connectorSet.points.length; pointIndex++) {
+        // 各接続点の情報を取得
+        //let connector = connectorSet.points[pointIndex];
     
-    let i=1;
-    for (let connector of shape.connectors) {
-      // 接続点のX座標は、長方形の中心から`w`に比例した位置に設定
-      let connectorX = (x - w / 2 + w * 0.8)*i;
-      // Y座標は長方形の上辺に配置
-      let connectorY = y - l / 2;
-      if(i == 1){
-        shape.connectors[0] = { x: connectorX, y: connectorY};
-      }else{
-        shape.connectors[1] = { x: connectorX, y: connectorY};
+        // 接続点のX座標とY座標を計算
+        let connectorX, connectorY;
+        if (setIndex === 0) {
+          // 第一セット (図形の上: yマイナス方向)
+          connectorX = (x - w / 2 + w * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y - l / 2; // 図形の上辺
+        } else if (setIndex === 1) {
+          // 第二セット (図形の下: yプラス方向)
+          connectorX = (x - w / 2 + w * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y + l / 2; // 図形の下辺
+        }
+    
+        // 接続点の座標を更新
+        connectorSet.points[pointIndex] = { x: connectorX, y: connectorY };
+    
+        // 接続点の矢印を描画
+        p.stroke(0, 0, 255);
+        p.fill(0, 0, 255);
+    
+        // 矢印の線部分
+        p.line(connectorX, connectorY, connectorX, connectorY + (setIndex === 0 ? -15 : 15)); // 上: -15, 下: +15
+    
+        // 矢印の先端部分
+        p.triangle(
+          connectorX,
+          connectorY + (setIndex === 0 ? -15 : 15),
+          connectorX - 5,
+          connectorY + (setIndex === 0 ? -9 : 9),
+          connectorX + 5,
+          connectorY + (setIndex === 0 ? -9 : 9)
+        );
+    
       }
-      // 接続点の矢印の描画
-      p.push();
-      p.stroke(0, 0, 255);
-      p.fill(0, 0, 255);
-      p.line(connectorX, connectorY, connectorX, connectorY - 15); // 矢印の線部分
-      p.triangle(connectorX, connectorY - 15, connectorX - 5, connectorY - 9, connectorX + 5, connectorY - 9); // 矢印の先端部分
-      p.pop();
-      i=-1;
     }
+    
     p.pop();
   }
 
@@ -578,6 +683,7 @@ let sketch1 = new p5((p) => {
       let shapeLength = 5 * 50; // 1cm = 50px と仮定
       let shapeWidth = 2 * 50; 
       newShape = {
+        id: id++,
         type: type,
         x: p.width/2,
         y: p.height/2,
@@ -586,10 +692,23 @@ let sketch1 = new p5((p) => {
         scale: Math.max(shapeLength, shapeWidth) / 500,
         rotation: 0,
         connectors: [
-          { x: 10, y: 0 }, // 左側の接続点
-          { x: -10, y: 0 }  // 右側の接続点
+          {
+            // 第一セットの接続点
+            points: [
+              { x: 10, y: 0 }, // 左側
+              { x: -10, y: 0 } // 右側
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          },
+          {
+            // 第二セットの接続点
+            points: [
+              { x: 10, y: 0 },
+              { x: -10, y: 0 }
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          }
         ],
-        isConnected: null, // 接続されているかのフラグ
         flags : {
           end: true,    // 初期状態: 端が切断されている
           middle: false // 初期状態: 中央が切断されていない
@@ -1402,7 +1521,7 @@ let sketch1 = new p5((p) => {
 
         // レイヤー移動した時に接続判定を切る
         if (draggedShape.isConnected) {
-          const connectedShape = draggedShape.isConnected; // 接続相手の図形を取得
+          const connectedShape = draggedShape.isConnected.shape; // 接続相手の図形を取得
           connectedShape.isConnected = null; // 接続相手の接続情報を解除
           draggedShape.isConnected = null; // ドラッグされた図形の接続情報を解除
         }
@@ -1526,6 +1645,13 @@ let sketch1 = new p5((p) => {
     document.getElementById('rotation-slider').value = selectedcustomizeShape.rotation;
 
     document.getElementById('cutting-button-container').classList.remove('hidden');
+    // ボタンの取得
+    let endCuttingButton = document.getElementById("end-cutting-button");
+    let middleCuttingButton = document.getElementById("middle-cutting-button");
+    // 初期状態を取得
+    endCuttingButton.textContent = selectedcustomizeShape.flags.end ? "接続" : "切断";
+    middleCuttingButton.textContent = selectedcustomizeShape.flags.middle ? "接続" : "切断";
+
     if (!mode2D) {
       document.getElementById('color-selector').classList.remove('hidden');
       document.getElementById('color-label').classList.remove('hidden');
@@ -1900,7 +2026,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
       points = aioien_points;
     } else if (shape.type === 'connect') {
       points = point;
-      console.log(points)
+      //console.log(points)
     }
   } else {
     points = getProcessPoints(shape.type, processNo);
@@ -2754,7 +2880,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
     // numInnerCurves によってインナーカーブの数を決定
     if (numInnerCurves === 1) {
       // インナーカーブが1本の場合
-  console.log(curve);
+  //console.log(curve);
       curveSet.push(createOffsetCurve(p, curve, 0)); // オフセット無し
     } else {
       // 複数のインナーカーブがある場合
@@ -2767,7 +2893,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
           -outerCurveWeight / 2 + innerCurveWeight / 2,
           outerCurveWeight / 2 - innerCurveWeight / 2
         );
-        console.log(curve);
+        //console.log(curve);
         curveSet.push(createOffsetCurve(p, curve, offset)); // オフセットを使ってカーブを生成
       }
     }
@@ -2782,7 +2908,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
 
 //指定されたオフセットに基づいて元の曲線を変形
 function createOffsetCurve(p, originalCurve, offset) {
-  console.log(originalCurve);
+  //console.log(originalCurve);
   return originalCurve.map((pt, index) => {
     let prev, next;
 
@@ -3072,8 +3198,14 @@ function updateMaterialsList() {
   }
 }
 
-function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
-  let shape2 = shape1.isConnected;
+/*function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
+  // 接続先の図形を取得
+  let shape2;
+  shape1.connectors.forEach((connectorSet) => {
+    if (connectorSet.isConnected !== null) {
+      shape2 = connectorSet.isConnected.shape;  // 接続先の図形を取得
+    }
+  });
   console.log(shape2);
 
     // shape1 をディープコピー
@@ -3151,6 +3283,7 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
       y: point.y + (shape2.y - shape1.y),
       z: point.z // z座標はそのまま保持
     }));
+    console.log(shape1.x);
 
     // shape2 の回転も考慮
     const rotateShape2 = (points) => {
@@ -3180,8 +3313,328 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints){
     //layers[layerIndex].shapes.push(newShape);
   console.log(newShape);
   drawShape(p, newShape, layerIndex, index, 0, -1, combinedPoints);
-}
+}*/
 
+//切断を踏まえて
+function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
+  // 接続先の図形を取得
+  let shape2, shape1ConnectSet, shape2ConnectSet;
+  shape1.connectors.forEach((connectorSet, index) => {
+    if (connectorSet.isConnected !== null) {
+      shape2 = connectorSet.isConnected.shape;  // 接続先の図形を取得
+      shape1ConnectSet = index;
+    }
+  });
+  shape2.connectors.forEach((connectorSet, index) => {
+    if (connectorSet.isConnected !== null && connectorSet.isConnected.shape === shape1) {
+      shape2ConnectSet = index; // shape2 の接続セットインデックスを取得
+    }
+  });
+  //let adjustedPoints2 = adjustControlPoints(shape);
+
+  // shape1が結合点を向いていて反対側が接続している場合、adjustControlPointsで中央を擬似接続にする
+  if (shape1ConnectSet == 0 && !shape1.flags.middle) {
+    //shape1.flags.middle = shape1.flags.end;
+    shape1.flags.end = true;
+    adjustedPoints1 = adjustControlPoints(shape1);
+    //console.log(adjustedPoints1);
+    if (adjustedPoints1.length == 1) {
+      const array = adjustedPoints1[0];
+      // 配列の中央インデックスを計算
+      const midIndex = Math.ceil(adjustedPoints1[0].length / 2);
+      // 前半と後半に分割
+      const array1 = array.slice(0, midIndex+2);
+      const array2 = array.slice(midIndex+1);
+
+      // 新しい構造に変換して返す
+      adjustedPoints1 =  [[...array1], [...array2]];
+    }
+    //console.log(adjustedPoints1);
+    //console.log('ok');
+  }
+  //console.log(shape1.flags.end, shape1.flags.middle, shape2.flags.end, shape2.flags.middle);
+
+  if (selectedcustomizeShape) {
+    let endCuttingButton = document.getElementById("end-cutting-button");
+    let middleCuttingButton = document.getElementById("middle-cutting-button");
+    if (selectedcustomizeShape === shape1) { 
+      if (shape1ConnectSet == 0) {
+        endCuttingButton.disabled = true; // ボタン無効化
+        middleCuttingButton.disabled = false; // ボタン有効化
+      } else {
+        endCuttingButton.disabled = false; // ボタン有効化
+        middleCuttingButton.disabled = true; // ボタン無効化
+      }
+    } else if (selectedcustomizeShape === shape2) {
+      if (shape2ConnectSet == 0) {
+        endCuttingButton.disabled = true; // ボタン無効化
+        middleCuttingButton.disabled = false; // ボタン有効化
+      } else {
+        endCuttingButton.disabled = false; // ボタン有効化
+        middleCuttingButton.disabled = true; // ボタン無効化
+      } 
+    }
+  }
+  // shape1 をディープコピー
+  const newShape = deepCopyWithoutConnection(shape1);
+
+  // 新しい形状のプロパティを上書き
+  newShape.type = 'connect';
+  newShape.x = shape1.x;
+  newShape.y = shape1.y;
+  newShape.rotation = 0; // 必要に応じて回転を設定
+  newShape.connectors = []; // 接続情報をリセット
+
+  // 初期化
+  let points1 = adjustedPoints1;
+  let points2 = adjustControlPoints(shape2);
+  let combinedPoints = [];
+  let scaleValue = shape1.scale;
+
+  // shape1 の制御点を取得
+  /*
+  if (shape1.type === 'awaji') {
+      points1 = awaji_points;
+  } else if (shape1.type === 'ume') {
+      points1 = ume_points;
+  } else if (shape1.type === 'renzoku') {
+      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55];
+      scaleValue = shape1.scale * scaleFactors[shape1.renzokuNum];
+      points1 = renzokuAwaji(shape1.renzokuNum);
+  } else if (shape1.type === 'aioien') {
+      scaleValue = shape1.scale * 1.3;
+      points1 = aioien_points;
+  }
+
+  // shape2 の制御点を取得
+  if (shape2.type === 'awaji') {
+      points2 = awaji_points;
+  } else if (shape2.type === 'ume') {
+      points2 = ume_points;
+  } else if (shape2.type === 'renzoku') {
+      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55];
+      scaleValue = shape2.scale * scaleFactors[shape2.renzokuNum];
+      points2 = renzokuAwaji(shape2.renzokuNum);
+  } else if (shape2.type === 'aioien') {
+      scaleValue = shape2.scale * 1.3;
+      points2 = aioien_points;
+  }
+*/
+
+//console.log(shape1.flags.middle, points1, points2);
+  // サイズ調整関数（多次元配列対応）
+  const scalePoints = (points, scale) => {
+    return points.map(segment => 
+      segment.map(point => ({
+        x: point.x * scale * 1.62,
+        y: point.y * scale * 1.62,
+        z: point.z * scale * 1.62,
+      }))
+    );
+  };
+
+  // 回転を考慮
+  const rotatePoints = (points, angle) => {
+    const cosAngle = Math.cos(angle);
+    const sinAngle = Math.sin(angle);
+
+    return points.map(segment =>
+      segment.map(point => ({
+        x: cosAngle * point.x - sinAngle * point.y,
+        y: sinAngle * point.x + cosAngle * point.y,
+        z: point.z, // z軸の値はそのまま
+      }))
+    );
+  };
+
+  // スケール適用
+  points1 = scalePoints(points1, shape1.scale);
+  points2 = scalePoints(points2, shape2.scale);
+
+  // 回転適用
+  const angle1 = p.radians(shape1.rotation);
+  const angle2 = p.radians(shape2.rotation);
+  points1 = rotatePoints(points1, angle1);
+  points2 = rotatePoints(points2, angle2);
+
+  // shape2 の制御点を shape1 基準に調整
+  points2 = points2.map(segment =>
+    segment.map(point => ({
+      x: point.x + (shape2.x - shape1.x),
+      y: point.y + (shape2.y - shape1.y),
+      z: point.z // z座標はそのまま保持
+    }))
+  );
+
+//console.log(shape1.flags.middle, points1, points2);
+  // 制御点を結合
+  //console.log(shape1.flags.middle, points1[1]);
+  if (shape1ConnectSet == 0 && shape2ConnectSet == 0) {
+    if (points2[1]) {
+      // points2[1] が存在する場合
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1) : []),  // points1[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points1[1]) ? [{
+              x: (points1[1][points1[1].length - 1].x + points2[0][0].x) / 2,
+              y: (points1[1][points1[1].length - 1].y + points2[0][0].y) / 2,
+              z: (points1[1][points1[1].length - 1].z + points2[0][0].z) / 2
+            }]
+          : []),  // 中間点を追加
+        ...points2[0].slice(1)  // points2[0]の最初から2番目から最後まで
+      ], [
+        ...(Array.isArray(points2[1]) ? points2[1].slice(0, -1) : []),  // points2[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points2[1]) ? [{
+              x: (points2[1][points2[1].length - 1].x + points1[0][0].x) / 2,
+              y: (points2[1][points2[1].length - 1].y + points1[0][0].y) / 2,
+              z: (points2[1][points2[1].length - 1].z + points1[0][0].z) / 2
+            }]
+          : []),  // 中間点を追加
+        ...points1[0].slice(1)  // points1[0]の展開
+      ]];
+    } else {
+      // points2[1] が存在しない場合
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1) : []),  // points1[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points1[1]) ? [{
+              x: (points1[1][points1[1].length - 1].x + points2[0][0].x) / 2,
+              y: (points1[1][points1[1].length - 1].y + points2[0][0].y) / 2,
+              z: (points1[1][points1[1].length - 1].z + points2[0][0].z) / 2
+            }]
+          : []),  // 中間点を追加
+        ...points2[0].slice(1, -1), // points2[0]の最初から2番目から最後まで
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2
+        },  // 中間点を追加
+        ...points1[0].slice(1) // points1[1]の展開
+      ]];
+    }
+  } else if (shape1ConnectSet == 0 && shape2ConnectSet == 1) {
+    if (shape2.flags.end) {
+      // points2の端が切れている
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1) : []),  // points1[0]の展開
+        ...(Array.isArray(points1[1]) ? [{
+          x: (points1[1][points1[1].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[1][points1[1].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[1][points1[1].length - 1].z + points2[1][0].z) / 2
+        }] : []),  // 中間点を追加
+        ...points2[1].slice(1)
+      ],[
+        ...points2[0].slice(0, -1),  // points2[1]が存在するので展開
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2
+        },  // 中間点を追加
+        ...points1[0].slice(1)   // points1[1]の展開
+      ]];
+    } else {
+      // points2の端がつながっている（擬似）
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1) : []),  // points1[0]の展開
+        ...(Array.isArray(points1[1]) ? [{
+          x: (points1[1][points1[1].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[1][points1[1].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[1][points1[1].length - 1].z + points2[1][0].z) / 2
+        }] : []),  // 中間点を追加
+        ...points2[1].slice(1),
+        ...points2[0].slice(0, -1),  // points2[1]が存在するので展開
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2
+        },  // 中間点を追加
+        ...points1[0].slice(1)   // points1[1]の展開
+      ]];
+    }
+  } else if (shape1ConnectSet == 1 && shape2ConnectSet == 0) {
+    if (points2[1]) {
+      // points2[1] が存在する場合
+      combinedPoints = [[
+        ...points1[0].slice(0, -1),  // points1[0]の展開
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[0][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[0][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[0][0].z) / 2
+        },  // 中間点を追加
+        ...points2[0].slice(1)
+      ], [
+        ...points2[1].slice(0, -1),  // points2[1]が存在するので展開
+        ...(Array.isArray(points2[1]) ? [{
+              x: (points2[1][points2[1].length - 1].x + points1[1][0].x) / 2,
+              y: (points2[1][points2[1].length - 1].y + points1[1][0].y) / 2,
+              z: (points2[1][points2[1].length - 1].z + points1[1][0].z) / 2
+            }]
+          : []),  // 中間点を追加
+        ...points1[1].slice(1)   // points1[1]の展開
+      ]];
+    } else {
+      // points2[1] が存在しない場合
+      combinedPoints = [[
+        ...points1[0].slice(0, -1),  // points1[0]の展開
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[0][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[0][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[0][0].z) / 2
+        },  // 中間点を追加
+        ...points2[0].slice(1, -1),  // points2[0]の展開
+        ...(Array.isArray(points1[1]) ? [{
+              x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+              y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+              z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2
+            }]
+          : []),  // 中間点を追加
+        ...(Array.isArray(points1[1]) ? points1[1].slice(1) : [])   // points1[1]の展開
+      ]];
+    }
+  } else if (shape1ConnectSet == 1 && shape2ConnectSet == 1) {
+    if (shape2.flags.end) {
+      combinedPoints = [[
+        ...points1[0].slice(0, -1),
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[1][0].z) / 2
+        },  // 中間点を追加
+        ...points2[1].slice(1)
+      ],[
+        ...points2[0].slice(0, -1),
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2
+        },  // 中間点を追加
+        ...points1[1].slice(1)
+      ]];
+    } else {
+      combinedPoints = [[
+        ...points1[0].slice(0, -1),
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[1][0].z) / 2
+        },  // 中間点を追加
+        ...points2[1].slice(1),
+        ...points2[0].slice(0, -1),
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2
+        },  // 中間点を追加
+        ...points1[1].slice(1)
+      ]];
+    }
+    
+  }
+  newShape.points = combinedPoints;
+
+  // 新しい図形をレイヤーに追加
+  //layers[layerIndex].shapes.push(newShape);
+  //console.log(combinedPoints);
+  drawShape(p, newShape, layerIndex, index, 0, -1, combinedPoints);
+}
 // 通常のディープコピーだとisConnectedで無限ループに陥るためこれをスキップ
 function deepCopyWithoutConnection(obj) {
   const copy = Array.isArray(obj) ? [] : {};
@@ -3223,12 +3676,12 @@ function adjustControlPoints(shape) {
     let midIndex = Math.floor(adjusted.length / 2);
 
     // 中央の挿入ポイントを取得
-    let middlePoint = middlePoints[shape.type];
+    let middlePoint = middlePoints[type];
 
     if (middlePoint) {
       // 各要素を展開して中央に挿入
       if (shape.type === 'renzoku') {
-        let addY = shape.renzokuNum * 60 - 60;
+        let addY = shape.renzokuNum * 60 - 80;
         adjusted.splice(midIndex, 0, ...middlePoint.map(point => ({ 
           ...point, 
           y: point.y + addY 
@@ -3259,7 +3712,7 @@ function adjustControlPoints(shape) {
       adjusted[0].shift();// adjusted配列の最初の要素を削除
       adjusted[1].pop();// adjusted配列の最後の要素を削除
       if (shape.type === 'renzoku') {
-        let addY = shape.renzokuNum * 60 - 60;
+        let addY = shape.renzokuNum * 60 - 80;
         adjusted[1] = adjusted[1].concat(
           endPoints[type].map(point => ({ 
             ...point, 
@@ -3286,7 +3739,7 @@ function adjustControlPoints(shape) {
       }
     }
   }
-  console.log(type, shape.type);
+  //console.log(type, shape.type);
   //console.log(adjusted, points);
   //console.log('1');
   if (Array.isArray(adjusted[0])) {//切断された場合
