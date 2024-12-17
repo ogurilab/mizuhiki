@@ -135,7 +135,7 @@ let sketch1 = new p5((p) => {
           }
           if (shape.type === 'awaji') {
             //p.fill(165, 42, 42, 100);
-            p.drawInvertedTriangle(0, 0, shape.d);
+            p.drawInvertedTriangle(shape, 0, 0, shape.d);
             //console.log(shape.x, shape.y, shape.d);
             // 逆三角形の右上の頂点にリサイズコーナーを配置
             let cornerX =shape.d / 2;
@@ -231,13 +231,13 @@ let sketch1 = new p5((p) => {
                     let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - otherConnector.y * Math.sin(p.radians(otherShape.rotation));
                     let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + otherConnector.y * Math.cos(p.radians(otherShape.rotation));
                     
-                    //p.ellipse(connectorX, connectorY, 5);
+                    p.ellipse(connectorX, connectorY, 5);
                     //console.log(connectorSet.isConnected);
                     // 距離を計算
                     let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
                     //console.log(connectorSet.isConnected, otherConnectorSet.isConnected);
-                    // 接続距離内で接続されていない場合、自動接続
-                    if (connectorSet.isConnected == null && otherConnectorSet.isConnected == null && distance <= connectionDistance) {
+                    // 接続距離内で接続されていない場合、自動接続(同色の場合)
+                    if (shape.color == otherShape.color && connectorSet.isConnected == null && otherConnectorSet.isConnected == null && distance <= connectionDistance) {
                       connectorSet.isConnected = { shape: otherShape, setIndex: otherSetIndex };
                       otherConnectorSet.isConnected = { shape: shape, setIndex: setIndex };
                       if (setIndex == 0) {
@@ -540,10 +540,47 @@ let sketch1 = new p5((p) => {
   }
 */
   //逆三角形の描画
-  p.drawInvertedTriangle = function (x, y, d) {
+  p.drawInvertedTriangle = function (shape, x, y, d) {
     p.push();
     p.translate(x, y);
     p.triangle(0, d/2, -d/2, -d/2, d/2, -d/2);
+    // 接続点の描画
+    for (let setIndex = 0; setIndex < shape.connectors.length; setIndex++) {
+      const connectorSet = shape.connectors[setIndex];
+      for (let pointIndex = 0; pointIndex < connectorSet.points.length; pointIndex++) {
+        // 接続点の座標を計算
+        let connectorX, connectorY;
+        if (setIndex === 0) {
+          // 第一セット (三角形の上辺: yマイナス方向)
+          connectorX = (x + d / 2 - d * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y - d / 2; // 三角形の上辺
+        } else if (setIndex === 1) {
+          // 第二セット (三角形の下辺: yプラス方向)
+          connectorX = (x + d / 2 - d * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y + d / 2; // 三角形の下辺
+        }
+  
+        // 接続点の座標を更新
+        connectorSet.points[pointIndex] = { x: connectorX, y: connectorY };
+  
+        // 接続点の矢印を描画
+        p.stroke(0, 0, 255);
+        p.fill(0, 0, 255);
+  
+        // 矢印の線部分
+        p.line(connectorX, connectorY, connectorX, connectorY + (setIndex === 0 ? -15 : 15)); // 上: -15, 下: +15
+  
+        // 矢印の先端部分
+        p.triangle(
+          connectorX,
+          connectorY + (setIndex === 0 ? -15 : 15),
+          connectorX - 5,
+          connectorY + (setIndex === 0 ? -9 : 9),
+          connectorX + 5,
+          connectorY + (setIndex === 0 ? -9 : 9)
+        );
+      }
+    }
     p.pop();
   }
 
@@ -715,7 +752,40 @@ let sketch1 = new p5((p) => {
         }
         //...p.getCurveParameters(currentType, 0, shapeLength, shapeWidth)
       };
-    } else if (type === 'awaji' || type === 'ume'){
+    } else if (type === 'awaji'){
+      let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        d: shapeDiameter,
+        scale: shapeDiameter / 300,
+        rotation: 0,
+        connectors: [
+          {
+            // 第一セットの接続点
+            points: [
+              { x: 10, y: 0 }, // 左側
+              { x: -10, y: 0 } // 右側
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          },
+          {
+            // 第二セットの接続点
+            points: [
+              { x: 10, y: 0 },
+              { x: -10, y: 0 }
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          }
+        ],
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      };
+    } else if (type === 'ume'){
       let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
       newShape = {
         type: type,
