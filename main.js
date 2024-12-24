@@ -231,7 +231,7 @@ let sketch1 = new p5((p) => {
                     let otherConnectorX = otherShape.x + otherConnector.x * Math.cos(p.radians(otherShape.rotation)) - otherConnector.y * Math.sin(p.radians(otherShape.rotation));
                     let otherConnectorY = otherShape.y + otherConnector.x * Math.sin(p.radians(otherShape.rotation)) + otherConnector.y * Math.cos(p.radians(otherShape.rotation));
                     
-                    p.ellipse(connectorX, connectorY, 5);
+                    //p.ellipse(connectorX, connectorY, 5);
                     //console.log(connectorSet.isConnected);
                     // 距離を計算
                     let distance = p.dist(connectorX, connectorY, otherConnectorX, otherConnectorY);
@@ -1821,12 +1821,50 @@ function initializeTab2() {
       }
       */
       let indexCounter = 0;
+      const renderedConnections = new Set(); // 描画済み接続を記録
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, shapeIndex) => {
-          drawShape(p, shape, layerIndex, shapeIndex, 0, -1, null);
+          //drawShape(p, shape, layerIndex, shapeIndex, 0, -1, null);
           indexCounter++;
+          let adjustedPoints = adjustControlPoints(shape);
+
+          let connected = false;
+          // connectors 内の isConnected フラグを確認して、接続されているかをチェック
+          if (shape.connectors) {
+            for (let connectorSet of shape.connectors) {
+              for (let i = 0; i < 2; i++) {
+                //console.log(connectorSet);
+                if (connectorSet.isConnected !== null) {
+                  connected = true;
+                  break;
+                }
+              }
+              if (connected) break;
+            }
+          }
+  
+          if (!connected) {
+            drawShape(p, shape, layerIndex, shapeIndex, 0, -1, adjustedPoints);
+          } else {
+            // 接続されている図形の描画
+            shape.connectors.forEach((connectorSet, setIndex) => {
+              // 接続先の図形を探す
+              if (connectorSet.isConnected?.shape) {
+                const shape2 = connectorSet.isConnected.shape;
+      
+                // 接続ペアを一意に識別するために文字列を生成
+                const connectionKey = `${Math.min(shape.id, shape2.id)}-${Math.max(shape.id, shape2.id)}`;
+      
+                if (!renderedConnections.has(connectionKey)) {
+                  // 未描画の接続のみ描画
+                  drawConnect(p, shape, layerIndex, shapeIndex, adjustedPoints);
+                  renderedConnections.add(connectionKey);
+                }
+              }
+            });
+          }
         });
-      });
+      });   
       
     }
   }, 'canvas2');
@@ -2083,29 +2121,36 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
   //console.log(shape.x, shape.y); 
   let points;
   if (processNo == -1) {
-    if (shape.type === 'awaji') {
-      points = awaji_points;
-    } else if (shape.type === 'ume') {
-      points = ume_points;
-    } else if (shape.type === 'renzoku') {
-      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
-      scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
-      points = renzokuAwaji(shape.renzokuNum);//何連続か
-    } else if (shape.type === 'aioien') {
-      scaleValue = shape.scale * 1.3;
-      points = aioien_points;
-    } else if (shape.type === 'connect') {
+    if (shape.type === 'connect') {
       points = point;
-      //console.log(points)
+    } else {
+      if (shape.type === 'awaji') {
+        points = [awaji_points];
+      } else if (shape.type === 'ume') {
+        points = [ume_points];
+      } else if (shape.type === 'renzoku') {
+        const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
+        scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+        points = [renzokuAwaji(shape.renzokuNum)];//何連続か
+      } else if (shape.type === 'aioien') {
+        scaleValue = shape.scale * 1.3;
+        points = [aioien_points];
+      }
     }
+    p.scale(scaleValue);
   } else {
-    points = getProcessPoints(shape.type, processNo);
+    points = [getProcessPoints(shape.type, processNo)];
   }
-  points = point;// とりあえず
-  p.scale(scaleValue);
   
-  let innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
-
+  let innerCurves;
+  if (shape.type == 'connect') {
+    // 選ばれたインデックスを取得
+    let selectedIndex = shape.shape[0].numInnerCurves > shape.shape[1].numInnerCurves ? 0 : 1;
+    innerCurves = createInnerCurvesConnect(p, points, shape.shape[selectedIndex].numInnerCurves, shape.shape[selectedIndex].outerCurveWeight, shape.innerCurveWeight);
+  } else {
+    innerCurves = createInnerCurves(p, points, shape.numInnerCurves, shape.outerCurveWeight, shape.innerCurveWeight);
+  }
+//console.log(innerCurves);
   p.noFill();
   if (shape.innerCurveWeight) {
     p.strokeWeight(shape.innerCurveWeight);
@@ -2160,7 +2205,12 @@ innerCurves.forEach((curveSet, curveSetIndex) => {
     }
 
     // カーブを描画
-    drawCurveFromPoints(p, curve);
+    if (shape.type == 'connect') {
+      //console.log(innerCurves, curveSet, curve);
+      drawCurveFromPoints(p, curve, shape.shape[0].numInnerCurves, shape.shape[1].numInnerCurves, curveIndex);
+    } else {
+      drawCurveFromPoints(p, curve, shape.numInnerCurves, shape.numInnerCurves, curveIndex);
+    }
 
     // 描画データを保存
     shapeInnerCurves.push({
@@ -2896,7 +2946,7 @@ function generateRenzokuPoints(n) {
 }
 
 //function drawCurveFromPoints(p, pts) {
-function drawCurveFromPoints(p, curves) {
+function drawCurveFromPoints(p, curves, shapeNum1, shapeNum2, index) {
   /*
   p.beginShape();
   p.curveVertex(pts[0].x, pts[0].y, pts[0].z);
@@ -2907,25 +2957,58 @@ function drawCurveFromPoints(p, curves) {
   p.endShape();
   */
   if (Array.isArray(curves[0])) {
+    // これないんじゃないのか？全部elseに入る
     // 複数のカーブ（curves は配列の配列）
     curves.forEach((curve) => {
       p.beginShape();
       p.curveVertex(curve[0].x, curve[0].y, curve[0].z || 0);
       curve.forEach((pt) => {
-        p.curveVertex(pt.x, pt.y, pt.z || 0);
+        console.log(pt,shape);
+        if (
+          (index >= shapeNum1 && pt.shape === "shape1") || 
+          (index >= shapeNum2 && pt.shape === "shape2")
+        ) {
+          return; // 条件を満たす場合は描画をスキップ
+        }
       });
       p.curveVertex(curve[curve.length - 1].x, curve[curve.length - 1].y, curve[curve.length - 1].z || 0);
       p.endShape();
     });
   } else {
     // 単一のカーブ（curves は点群の配列）
+    let drawing = true; // 描画状態を管理するフラグ
     p.beginShape();
     p.curveVertex(curves[0].x, curves[0].y, curves[0].z || 0);
-    curves.forEach((pt) => {
-      p.curveVertex(pt.x, pt.y, pt.z || 0);
-    });
-    p.curveVertex(curves[curves.length - 1].x, curves[curves.length - 1].y, curves[curves.length - 1].z || 0);
-    p.endShape();
+    for (let i = 0; i < curves.length; i++) {
+      const pt = curves[i];
+      // 描画をスキップする条件
+      if ((index >= shapeNum1 && pt.shape === "shape1") || (index >= shapeNum2 && pt.shape === "shape2")) {
+        if (drawing && i != 0) {
+          // 描画中ならシェイプを終了
+          p.curveVertex(curves[i - 1].x, curves[i - 1].y, curves[i - 1].z || 0);
+          p.endShape();
+          drawing = false; // 描画を停止
+        }
+        continue; // この点をスキップ
+      } else {
+        if (!drawing) {
+          // 描画を再開する場合、新しいシェイプを開始
+          p.beginShape();
+          drawing = true;
+          // 前の点とスムーズに接続したい場合、前回の点を追加
+          if (i > 0) {
+            const prev = curves[i - 1];
+            p.curveVertex(prev.x, prev.y, prev.z || 0);
+          }
+        }
+        // 現在の点を描画
+        p.curveVertex(pt.x, pt.y, pt.z || 0);
+      }
+    }
+    if (drawing) {
+      p.curveVertex(curves[curves.length - 1].x, curves[curves.length - 1].y, curves[curves.length - 1].z || 0);
+      p.endShape(); // 最後のシェイプを閉じる
+    }
   }
 }
 
@@ -2950,7 +3033,6 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
     // numInnerCurves によってインナーカーブの数を決定
     if (numInnerCurves === 1) {
       // インナーカーブが1本の場合
-  //console.log(curve);
       curveSet.push(createOffsetCurve(p, curve, 0)); // オフセット無し
     } else {
       // 複数のインナーカーブがある場合
@@ -2974,6 +3056,48 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
 
   //console.log(innerCurves);
   return innerCurves; // [[innerCurves1], [innerCurves2]] の形で返す
+}
+
+function createInnerCurvesConnect(p, points, numInnerCurves, outerCurveWeight, innerCurveWeight) {
+  let innerCurves = [];
+
+  points.forEach((curve) => {// ex)  points=[Array(44), Array(44)]
+    let curveSet = []; // 各カーブセットを保持する配列
+
+    // numInnerCurves によってインナーカーブの数を決定
+    if (numInnerCurves === 1) {
+      // インナーカーブが1本の場合
+      let offsetCurve = createOffsetCurve(p, curve, 0); // オフセット無し
+      let augmentedCurve = offsetCurve.map((pt, index) => ({
+        ...pt,
+        shape: curve[index].shape // 各点に shape を追加
+      }));
+      curveSet.push(augmentedCurve);
+    } else {
+      // 複数のインナーカーブがある場合
+      for (let i = 0; i < numInnerCurves; i++) {
+        // インナーカーブごとにオフセットを設定
+        let offset = p.map(
+          i,
+          0,
+          numInnerCurves - 1,
+          -outerCurveWeight / 2 + innerCurveWeight / 2,
+          outerCurveWeight / 2 - innerCurveWeight / 2
+        );
+        //console.log(curvePoints);
+        let offsetCurve = createOffsetCurve(p, curve, offset);
+        let augmentedCurve = offsetCurve.map((pt, index) => ({
+          ...pt,
+          shape: curve[index].shape // 各点に shape を追加
+        }));
+        curveSet.push(augmentedCurve);
+      }
+    }
+    // 各カーブセットを innerCurves に追加
+    innerCurves.push(curveSet);
+  });
+
+  return innerCurves;
 }
 
 //指定されたオフセットに基づいて元の曲線を変形
@@ -3459,7 +3583,7 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
   let points1 = adjustedPoints1;
   let points2 = adjustControlPoints(shape2);
   let combinedPoints = [];
-  let scaleValue = shape1.scale;
+  //let scaleValue = shape1.scale;
 
   // shape1 の制御点を取得
   /*
@@ -3493,12 +3617,23 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
 
 //console.log(shape1.flags.middle, points1, points2);
   // サイズ調整関数（多次元配列対応）
-  const scalePoints = (points, scale) => {
+  const scalePoints = (points, shape) => {
+    // scaleValue を shape に基づいて計算
+    let scaleValue;
+    if (shape.type === 'awaji') {
+      scaleValue = shape.scale * 1.62; // awaji の場合
+    } else if (shape.type === 'renzoku') {
+      const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
+      scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+    } else {
+      scaleValue = shape.scale * 1.62; // デフォルト値
+    }
+
     return points.map(segment => 
       segment.map(point => ({
-        x: point.x * scale * 1.62,
-        y: point.y * scale * 1.62,
-        z: point.z * scale * 1.62,
+        x: point.x * scaleValue,
+        y: point.y * scaleValue,
+        z: point.z * scaleValue,
       }))
     );
   };
@@ -3518,8 +3653,8 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
   };
 
   // スケール適用
-  points1 = scalePoints(points1, shape1.scale);
-  points2 = scalePoints(points2, shape2.scale);
+  points1 = scalePoints(points1, shape1);
+  points2 = scalePoints(points2, shape2);
 
   // 回転適用
   const angle1 = p.radians(shape1.rotation);
@@ -3543,24 +3678,36 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
     if (points2[1]) {
       // points2[1] が存在する場合
       combinedPoints = [[
-        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1) : []),  // points1[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[1] のポイントに対応する shape
+            })) : []),  // points1[1]の最後から一つ前の要素まで
         ...(Array.isArray(points1[1]) ? [{
               x: (points1[1][points1[1].length - 1].x + points2[0][0].x) / 2,
               y: (points1[1][points1[1].length - 1].y + points2[0][0].y) / 2,
-              z: (points1[1][points1[1].length - 1].z + points2[0][0].z) / 2
-            }]
-          : []),  // 中間点を追加
-        ...points2[0].slice(1)  // points2[0]の最初から2番目から最後まで
+              z: (points1[1][points1[1].length - 1].z + points2[0][0].z) / 2,
+              shape: "shapeM" // 中間点に対応する shape
+            }] : []),  // 中間点を追加
+        ...points2[0].slice(1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[0] のポイントに対応する shape
+            }))  // points2[0]の最初から2番目から最後まで
       ], [
-        ...(Array.isArray(points2[1]) ? points2[1].slice(0, -1) : []),  // points2[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points2[1]) ? points2[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[1] のポイントに対応する shape
+            })) : []),  // points2[1]の最後から一つ前の要素まで
         ...(Array.isArray(points2[1]) ? [{
               x: (points2[1][points2[1].length - 1].x + points1[0][0].x) / 2,
               y: (points2[1][points2[1].length - 1].y + points1[0][0].y) / 2,
-              z: (points2[1][points2[1].length - 1].z + points1[0][0].z) / 2
-            }]
-          : []),  // 中間点を追加
-        ...points1[0].slice(1)  // points1[0]の展開
-      ]];
+              z: (points2[1][points2[1].length - 1].z + points1[0][0].z) / 2,
+              shape: "shapeM" // 中間点に対応する shape
+            }] : []),  // 中間点を追加
+        ...points1[0].slice(1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[0] のポイントに対応する shape
+            }))  // points1[0]の展開
+      ]];      
     } else {
       // points2[1] が存在しない場合
       combinedPoints = [[
@@ -3579,6 +3726,33 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
         },  // 中間点を追加
         ...points1[0].slice(1) // points1[1]の展開
       ]];
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[1] のポイントに対応する shape
+            })) : []),  // points1[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points1[1]) ? [{
+              x: (points1[1][points1[1].length - 1].x + points2[0][0].x) / 2,
+              y: (points1[1][points1[1].length - 1].y + points2[0][0].y) / 2,
+              z: (points1[1][points1[1].length - 1].z + points2[0][0].z) / 2,
+              shape: "shapeM" // 中間点に対応する shape
+            }] : []),  // 中間点を追加
+        ...points2[0].slice(1, -1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[0] のポイントに対応する shape
+            })),  // points2[0]の最初から2番目から最後まで
+        ...(Array.isArray(points2[0]) ? [{
+              x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+              y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+              z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2,
+              shape: "shapeM" // 中間点に対応する shape
+            }] : []),  // 中間点を追加
+        ...points1[0].slice(1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[0] のポイントに対応する shape
+            }))  // points1[0]の展開
+      ]];
+
     }
   } else if (shape1ConnectSet == 0 && shape2ConnectSet == 1) {
     if (shape2.flags.end) {
@@ -3600,6 +3774,38 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
         },  // 中間点を追加
         ...points1[0].slice(1)   // points1[1]の展開
       ]];
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) ? points1[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[1] のポイントに対応する shape
+            })) : []),  // points1[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points1[1]) ? [{
+          x: (points1[1][points1[1].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[1][points1[1].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[1][points1[1].length - 1].z + points2[1][0].z) / 2,
+          shape: "shapeM" // 中間点に対応する shape
+        }] : []),  // 中間点を追加
+        ...points2[1].slice(1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[1] のポイントに対応する shape
+            }))  // points2[1]の最初から2番目から最後まで
+      ], [
+        ...points2[0].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[0] のポイントに対応する shape
+            })),  // points2[0] の最後から一つ前の要素まで
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2,
+          shape: "shapeM" // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points1[0].slice(1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[0] のポイントに対応する shape
+            }))  // points1[0]の最初から2番目以降を展開
+      ]];
+
     } else {
       // points2の端がつながっている（擬似）
       combinedPoints = [[
@@ -3618,6 +3824,41 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
         },  // 中間点を追加
         ...points1[0].slice(1)   // points1[1]の展開
       ]];
+      combinedPoints = [[
+        ...(Array.isArray(points1[1]) 
+          ? points1[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1", // points1[1] のポイントに対応する shape
+            }))
+          : []),  // points1[1] の最後から一つ前まで
+        ...(Array.isArray(points1[1]) 
+          ? [{
+              x: (points1[1][points1[1].length - 1].x + points2[1][0].x) / 2,
+              y: (points1[1][points1[1].length - 1].y + points2[1][0].y) / 2,
+              z: (points1[1][points1[1].length - 1].z + points2[1][0].z) / 2,
+              shape: "shapeM", // 中間点に対応する shape
+            }]
+          : []),  // 中間点を追加
+        ...points2[1].slice(1).map(point => ({
+          ...point,
+          shape: "shape2", // points2[1] のポイントに対応する shape
+        })),  // points2[1] の最初から2番目以降
+        ...points2[0].slice(0, -1).map(point => ({
+          ...point,
+          shape: "shape2", // points2[0] のポイントに対応する shape
+        })),  // points2[0] の最後から一つ前まで
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[0][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[0][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[0][0].z) / 2,
+          shape: "shapeM", // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points1[0].slice(1).map(point => ({
+          ...point,
+          shape: "shape1", // points1[0] のポイントに対応する shape
+        })),  // points1[0] の最初から2番目以降
+      ]];
+      
     }
   } else if (shape1ConnectSet == 1 && shape2ConnectSet == 0) {
     if (points2[1]) {
@@ -3640,6 +3881,37 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
           : []),  // 中間点を追加
         ...points1[1].slice(1)   // points1[1]の展開
       ]];
+      combinedPoints = [[
+        ...points1[0].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[0] のポイントに対応する shape
+            })),  // points1[0]の最後から一つ前の要素まで
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[0][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[0][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[0][0].z) / 2,
+          shape: "shapeM" // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points2[0].slice(1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[0] のポイントに対応する shape
+            }))  // points2[0]の最初から2番目以降
+      ], [
+        ...points2[1].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[1] のポイントに対応する shape
+            })),  // points2[1]の最後から一つ前の要素まで
+        ...(Array.isArray(points2[1]) ? [{
+              x: (points2[1][points2[1].length - 1].x + points1[1][0].x) / 2,
+              y: (points2[1][points2[1].length - 1].y + points1[1][0].y) / 2,
+              z: (points2[1][points2[1].length - 1].z + points1[1][0].z) / 2,
+              shape: "shapeM" // 中間点に対応する shape
+            }] : []),  // 中間点を追加
+        ...points1[1].slice(1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[1] のポイントに対応する shape
+            }))  // points1[1]の最初から2番目以降
+      ]];
     } else {
       // points2[1] が存在しない場合
       combinedPoints = [[
@@ -3657,6 +3929,36 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
             }]
           : []),  // 中間点を追加
         ...(Array.isArray(points1[1]) ? points1[1].slice(1) : [])   // points1[1]の展開
+      ]];
+      combinedPoints = [[
+        ...points1[0].slice(0, -1).map(point => ({
+          ...point,
+          shape: "shape1", // points1[0] のポイントに対応する shape
+        })),  // points1[0]の最後から一つ前まで
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[0][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[0][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[0][0].z) / 2,
+          shape: "shapeM", // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points2[0].slice(1, -1).map(point => ({
+          ...point,
+          shape: "shape2", // points2[0] のポイントに対応する shape
+        })),  // points2[0] の最初から2番目から最後の一つ前まで
+        ...(Array.isArray(points1[1]) 
+          ? [{
+              x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+              y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+              z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2,
+              shape: "shapeM", // 中間点に対応する shape
+            }]
+          : []),  // 中間点を追加
+        ...(Array.isArray(points1[1]) 
+          ? points1[1].slice(1).map(point => ({
+              ...point,
+              shape: "shape1", // points1[1] のポイントに対応する shape
+            }))
+          : []),  // points1[1] の最初から2番目以降
       ]];
     }
   } else if (shape1ConnectSet == 1 && shape2ConnectSet == 1) {
@@ -3678,6 +3980,38 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
         },  // 中間点を追加
         ...points1[1].slice(1)
       ]];
+      combinedPoints = [[
+        ...points1[0].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[0] のポイントに対応する shape
+            })),  // points1[0] の最後から一つ前まで
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[1][0].z) / 2,
+          shape: "shapeM" // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points2[1].slice(1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[1] のポイントに対応する shape
+            }))  // points2[1] の最初から2番目以降
+      ], [
+        ...points2[0].slice(0, -1).map(point => ({
+              ...point,
+              shape: "shape2" // points2[0] のポイントに対応する shape
+            })),  // points2[0] の最後から一つ前まで
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2,
+          shape: "shapeM" // 中間点に対応する shape
+        },  // 中間点を追加
+        ...points1[1].slice(1).map(point => ({
+              ...point,
+              shape: "shape1" // points1[1] のポイントに対応する shape
+            }))  // points1[1] の最初から2番目以降
+      ]];
+
     } else {
       combinedPoints = [[
         ...points1[0].slice(0, -1),
@@ -3695,14 +4029,45 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1){
         },  // 中間点を追加
         ...points1[1].slice(1)
       ]];
+      combinedPoints = [[
+        ...points1[0].slice(0, -1).map(point => ({
+          ...point,
+          shape: "shape1", // points1[0] のポイントに対応する shape
+        })),
+        {
+          x: (points1[0][points1[0].length - 1].x + points2[1][0].x) / 2,
+          y: (points1[0][points1[0].length - 1].y + points2[1][0].y) / 2,
+          z: (points1[0][points1[0].length - 1].z + points2[1][0].z) / 2,
+          shape: "shapeM", // 中間点に対応する shape
+        },
+        ...points2[1].slice(1).map(point => ({
+          ...point,
+          shape: "shape2", // points2[1] のポイントに対応する shape
+        })),
+        ...points2[0].slice(0, -1).map(point => ({
+          ...point,
+          shape: "shape2", // points2[0] のポイントに対応する shape
+        })),
+        {
+          x: (points2[0][points2[0].length - 1].x + points1[1][0].x) / 2,
+          y: (points2[0][points2[0].length - 1].y + points1[1][0].y) / 2,
+          z: (points2[0][points2[0].length - 1].z + points1[1][0].z) / 2,
+          shape: "shapeM", // 中間点に対応する shape
+        },
+        ...points1[1].slice(1).map(point => ({
+          ...point,
+          shape: "shape1", // points1[1] のポイントに対応する shape
+        }))
+      ]];
     }
     
   }
   newShape.points = combinedPoints;
+  newShape.shape = [shape1, shape2];
 
   // 新しい図形をレイヤーに追加
   //layers[layerIndex].shapes.push(newShape);
-  //console.log(combinedPoints);
+  //console.log(newShape.points);
   drawShape(p, newShape, layerIndex, index, 0, -1, combinedPoints);
 }
 // 通常のディープコピーだとisConnectedで無限ループに陥るためこれをスキップ
