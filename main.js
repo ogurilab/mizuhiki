@@ -554,11 +554,11 @@ let sketch1 = new p5((p) => {
           // 第一セット (三角形の上辺: yマイナス方向)
           connectorX = (x + d / 2 - d * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
           connectorY = y - d / 2; // 三角形の上辺
-        } else if (setIndex === 1) {
+        }/* else if (setIndex === 1) {
           // 第二セット (三角形の下辺: yプラス方向)
           connectorX = (x + d / 2 - d * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
           connectorY = y + d / 2; // 三角形の下辺
-        }
+        }*/
   
         // 接続点の座標を更新
         connectorSet.points[pointIndex] = { x: connectorX, y: connectorY };
@@ -769,7 +769,7 @@ let sketch1 = new p5((p) => {
               { x: -10, y: 0 } // 右側
             ],
             isConnected: null, // 各接続点の接続フラグ
-          },
+          },/*
           {
             // 第二セットの接続点
             points: [
@@ -777,7 +777,7 @@ let sketch1 = new p5((p) => {
               { x: -10, y: 0 }
             ],
             isConnected: null, // 各接続点の接続フラグ
-          }
+          }*/
         ],
         flags : {
           end: true,    // 初期状態: 端が切断されている
