@@ -320,10 +320,6 @@ h1 {
   background-color: #333;
 }
 
-.parts-content {
-  /* 追加コンテンツのスタイル */
-}
-
 #parts-canvas-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, 270px);
@@ -414,7 +410,7 @@ h1 {
 #process-buffer {
   position: absolute;
   top: 30px;
-  left: 30px;
+  left: 20px;
   color: black;
   font-size: 20px;
   font-family: Arial, sans-serif;
@@ -430,4 +426,10 @@ h1 {
   height: 20px;
   margin-right: 10px;
   border: 1px solid #000;
+}
+
+ul {
+  list-style: none; /* デフォルトの丸を削除 */
+  padding: 0;       /* インデントを削除 */
+  margin: 0;        /* マージンを削除 */
 }
