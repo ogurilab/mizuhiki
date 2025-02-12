@@ -21,7 +21,7 @@ main {
   display: none;
 }
 
-.circle-button, .triangle-button, .rectangle-button, .donut-button {
+.circle-button, .triangle-button, .rectangle-button, .donut-button, .kame-button, .kame2-button {
   width: 30px;
   height: 30px;
   border: none;
@@ -41,7 +41,7 @@ main {
 }
 
 .rectangle-button {
-  width        : 40px;
+  width        : 20px;
   height       : 30px;
   background: black;
 }
@@ -52,6 +52,21 @@ main {
   background-color: black;
   clip-path: circle(50%);
   mask-image: radial-gradient(transparent 30%, black 30%);
+}
+
+.kame-button {
+  width: 20px;          /* 楕円の幅 */
+  height: 30px;         /* 半楕円の高さ */
+  background-color: black;  /* 楕円の色 */
+  border-bottom-right-radius: 50% 80%;
+  border-bottom-left-radius: 50% 80%;
+}
+
+.kame2-button {
+  width: 20px;          /* 楕円の幅 */
+  height: 30px;         /* 半楕円の高さ */
+  background-color: black;  /* 楕円の色 */
+  border-radius: 80%;
 }
 
 #convert-button {

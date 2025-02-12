@@ -1,7 +1,7 @@
 //let shapes = [];
 let layers = [];
 //let mode2D = true;
-let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [], aioien_points = [];
+let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [], aioien_points = [], kame_points = [], kame2_points = [];
 //let currentType = null;
 let innerCurvesData = [];
 //let selectedCurve = null;
@@ -157,6 +157,18 @@ let sketch1 = new p5((p) => {
             p.drawDonut(0, 0, shape.d, shape.d*0.7);
             let markerX =shape.d/2 * p.cos(p.QUARTER_PI);  // QUARTER_PI=45度
             let markerY =shape.d/2 * p.sin(p.QUARTER_PI);
+            p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
+          } else if (shape.type === 'kame') {
+            //p.fill(165, 42, 42, 100);
+            p.drawKame(shape, 0, 0, shape.w, shape.l);
+            p.rect(shape.w/2 - resizeCornerSize/2, -shape.l/4 - resizeCornerSize/2, resizeCornerSize, resizeCornerSize);
+          } else if (shape.type === 'kame2') {
+            //p.fill(165, 42, 42, 100);
+            p.drawKame2(0, 0, shape.w, shape.l);
+            // 楕円上の点を計算
+            let markerX = (shape.w / 2) * p.cos(p.QUARTER_PI); // 楕円の横幅 (w) を半径として使用
+            let markerY = (shape.l / 2) * p.sin(p.QUARTER_PI); // 楕円の縦幅 (l) を半径として使用
+            // 四角を描画
             p.rect(markerX - resizeCornerSize / 2, markerY - resizeCornerSize / 2, resizeCornerSize, resizeCornerSize);
           }
           p.pop();
@@ -655,6 +667,54 @@ let sketch1 = new p5((p) => {
     
     p.pop();
   }
+
+  p.drawKame = function (shape, x, y, w, l) {
+    // 半楕円を描画
+    p.arc(x, y-l/4, w, l, 0, p.PI);
+    p.push();
+    // 接続点の描画
+    for (let setIndex = 0; setIndex < shape.connectors.length; setIndex++) {
+      const connectorSet = shape.connectors[setIndex];
+      for (let pointIndex = 0; pointIndex < connectorSet.points.length; pointIndex++) {
+        // 接続点の座標を計算
+        let connectorX, connectorY;
+        if (setIndex === 0) {
+          // 第一セット (三角形の上辺: yマイナス方向)
+          connectorX = (x + w / 2 - w * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y-l/4; // 三角形の上辺
+        }/* else if (setIndex === 1) {
+          // 第二セット (三角形の下辺: yプラス方向)
+          connectorX = (x + d / 2 - d * 0.8) * (pointIndex === 0 ? 1 : -1); // 左: 1, 右: -1
+          connectorY = y + d / 2; // 三角形の下辺
+        }*/
+  
+        // 接続点の座標を更新
+        connectorSet.points[pointIndex] = { x: connectorX, y: connectorY };
+  
+        // 接続点の矢印を描画
+        p.stroke(0, 0, 255);
+        p.fill(0, 0, 255);
+  
+        // 矢印の線部分
+        p.line(connectorX, connectorY, connectorX, connectorY + (setIndex === 0 ? -15 : 15)); // 上: -15, 下: +15
+  
+        // 矢印の先端部分
+        p.triangle(
+          connectorX,
+          connectorY + (setIndex === 0 ? -15 : 15),
+          connectorX - 5,
+          connectorY + (setIndex === 0 ? -9 : 9),
+          connectorX + 5,
+          connectorY + (setIndex === 0 ? -9 : 9)
+        );
+      }
+    }
+    p.pop();
+  }
+  p.drawKame2 = function (x, y, w, l) {
+    // 半楕円を描画
+    p.arc(x, y, w, l, 0, p.TWO_PI);
+  }
 /*
   //選択された図形の種類によってサイズ選択ボタンを表示・非表示にする
   p.showSizeSelector = function (type) {
@@ -781,6 +841,58 @@ let sketch1 = new p5((p) => {
         }
         //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
+    } else if (type === 'kame'){
+      let shapeWidth = 2 * 50; 
+      let shapeLength = shapeWidth*1.8; // 1cm = 50px と仮定
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        w: shapeWidth,
+        l: shapeLength,
+        scale: Math.max(shapeLength, shapeWidth) / 500,
+        rotation: 0,
+        connectors: [
+          {
+            // 第一セットの接続点
+            points: [
+              { x: 10, y: 0 }, // 左側
+              { x: -10, y: 0 } // 右側
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          },/*
+          {
+            // 第二セットの接続点
+            points: [
+              { x: 10, y: 0 },
+              { x: -10, y: 0 }
+            ],
+            isConnected: null, // 各接続点の接続フラグ
+          }*/
+        ],
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      }
+    } else if (type === 'kame2'){
+      let shapeWidth = 2 * 50; 
+      let shapeLength = shapeWidth*1.6; // 1cm = 50px と仮定
+      newShape = {
+        type: type,
+        x: p.width/2,
+        y: p.height/2,
+        w: shapeWidth,
+        l: shapeLength,
+        scale: Math.max(shapeLength, shapeWidth) / 500,
+        rotation: 0,
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
+        //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
+      }
     } else if (type === 'ume'){
       let shapeDiameter = 3 * 50; // 1cm = 50px と仮定
       newShape = {
@@ -805,6 +917,10 @@ let sketch1 = new p5((p) => {
         d: shapeDiameter,
         scale: shapeDiameter / 300,
         rotation: 0,
+        flags : {
+          end: true,    // 初期状態: 端が切断されている
+          middle: false // 初期状態: 中央が切断されていない
+        }
         //...p.getCurveParameters(currentType, shapeDiameter, 0, 0)
       };
     }
@@ -988,7 +1104,7 @@ let sketch1 = new p5((p) => {
       }
       //translate(-width/2, -height/2);
     }
-    }
+  }
 /*
   p.decideSizeParameters = function (shape, type, circleDiameter, shapeWidth, shapeLength) {
     let cmSize = circleDiameter / 50;
@@ -1351,6 +1467,29 @@ let sketch1 = new p5((p) => {
             resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex};
             return;
           }
+        } else if (shape.type === 'kame') {
+          let cornerX = shape.x + shape.w / 2;
+          let cornerY = shape.y - shape.l / 4;
+          
+          // 判定範囲のクリック判定
+          if (p.mouseX > cornerX - resizeCornerSize / 2 && p.mouseX < cornerX + resizeCornerSize / 2 &&
+              p.mouseY > cornerY - resizeCornerSize / 2 && p.mouseY < cornerY + resizeCornerSize / 2) {
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex };
+            return;
+          }
+        } else if (shape.type === 'kame2') {
+          let angle = p.QUARTER_PI; // 四角を描画したい角度（ここでは 45 度）
+          
+          // 楕円上の点を計算
+          let markerX = shape.x + (shape.w / 2) * p.cos(angle); // 楕円の横幅 (w) を半径として使用
+          let markerY = shape.y + (shape.l / 2) * p.sin(angle); // 楕円の縦幅 (l) を半径として使用
+          
+          // 判定範囲のクリック判定
+          if (p.mouseX > markerX - resizeCornerSize / 2 && p.mouseX < markerX + resizeCornerSize / 2 &&
+              p.mouseY > markerY - resizeCornerSize / 2 && p.mouseY < markerY + resizeCornerSize / 2) {
+            resizing = { layerIndex: layerIndex, shapeIndex: shapeIndex };
+            return;
+          }
         }
       }
     }
@@ -1428,7 +1567,7 @@ let sketch1 = new p5((p) => {
       maxSize = 200;
       shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     } else if (shape.type === 'renzoku') {
-      minWidth = 40;
+      minWidth = 30;
       maxWidth = 150;
       minLength = 70;
       maxLength = 370;
@@ -1448,6 +1587,16 @@ let sketch1 = new p5((p) => {
       minSize = 80;
       maxSize = 200;
       shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
+    } else if (shape.type === 'kame') {
+      minWidth = 80;
+      maxWidth = 300;
+      shape.w = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
+      shape.l = shape.w * 1.8;
+    } else if (shape.type === 'kame2') {
+      minWidth = 50;
+      maxWidth = 300;
+      shape.w = p.constrain((p.mouseX - shape.x) * 2, minWidth, maxWidth);
+      shape.l = shape.w * 1.6;
     }
   }  
 
@@ -1709,7 +1858,7 @@ let sketch1 = new p5((p) => {
       layer.shapes.forEach(shape => {
         shape.zIndex = zOffset;
       });
-      zOffset += 8;
+      zOffset += 15;
     });
   }
 
@@ -1722,7 +1871,7 @@ let sketch1 = new p5((p) => {
     // スライダーの値を選択した図形の回転度に設定
     document.getElementById('rotation-slider').value = selectedcustomizeShape.rotation;
 
-    if (selectedcustomizeShape.type === 'awaji') {
+    if (selectedcustomizeShape.type === 'awaji' || selectedcustomizeShape.type === 'kame') {
       document.getElementById('cutting-button-container').classList.remove('hidden');
       // ボタンの取得
       let endCuttingButton = document.getElementById("end-cutting-button");
@@ -2128,6 +2277,15 @@ function initializeTab2() {
                   j++;
                 }
               }});
+              material.forEach(item => {
+                if (item.cm === 53) {
+                  item.cm = 60;
+                } else if (item.cm === 68) {
+                  item.cm = 67;
+                } else if (item.cm === 75 || item.cm === 83) {
+                  item.cm = 90;
+                }
+              });
           } else {
             for (let i = 0; i < shape.numInnerCurves; i++) {
               let color;
@@ -2490,12 +2648,19 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
       } else if (shape.type === 'aioien') {
         scaleValue = shape.scale * 1.3;
         points = [aioien_points];
+      } else if (shape.type === 'kame') {
+        scaleValue = shape.scale  * 1.2;
+        points = point;
+      } else if (shape.type === 'kame2') {
+        scaleValue = shape.scale  * 1.4;
+        points = [kame2_points];
       }
     p.scale(scaleValue);
     }
   } else {
     if (shape.type === 'connect') {
       points = point;
+      scaleValue = 1;
     } else if (shape.type === 'renzoku') {
       points = getProcessPoints(shape.type, processNo);
       const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
@@ -2503,6 +2668,12 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
     } else if (shape.type === 'aioien') {
       points = [getProcessPoints(shape.type, processNo)];
       scaleValue = shape.scale * 1.3;
+    } else if (shape.type === 'kame') {
+      points = [getProcessPoints(shape.type, processNo)];
+      scaleValue = shape.scale  * 1.2;
+    } else if (shape.type === 'kame2') {
+      points = [getProcessPoints(shape.type, processNo)];
+      scaleValue = shape.scale  * 1.4;
     } else {
       points = [getProcessPoints(shape.type, processNo)];
     }
@@ -2677,7 +2848,7 @@ function definePoints() {
       { x: -45, y: -30, z: -5 },
       { x: 15, y: -75, z: 7 },
       { x: 70, y: -60, z: -5 },
-      { x: 70, y: -5, z: 0 },
+      { x: 70, y: -5, z: 10 },
       { x: 10, y: 5, z: -5 },
       { x: -40, y: -20, z: 5 },
       { x: -60, y: -60, z: -5 },
@@ -2701,7 +2872,7 @@ function definePoints() {
       { x: 60, y: -60, z: 5 },
       { x: 40, y: -20, z: -5 },
       { x: -10, y: 5, z: 5 },
-      { x: -70, y: -5, z: 0 },
+      { x: -70, y: -5, z: -10 },
       { x: -70, y: -60, z: 5 },
       { x: -15, y: -75, z: -7 },
       { x: 45, y: -30, z: 5 },
@@ -2739,6 +2910,106 @@ function definePoints() {
     { x: 0, y: 70, z: 5}, 
     { x: -50, y: 45, z: -5}
   ];
+
+  kame_points = [
+    { x: 85, y: -145, z: -15 }, 
+    { x: 40, y: -85, z: 3 }, 
+    { x: 0, y: -75, z: -4 }, 
+    { x: -20, y: -50, z: 4 }, 
+    { x: -40, y: -30, z: -3 }, 
+    { x: -70, y: -30, z: 4 }, 
+    { x: -85, y: -80, z: -7 }, 
+    { x: -30, y: -120, z: 5 }, 
+    { x: 40, y: -90, z: -5 }, 
+    { x: 60, y: -60, z: 4 }, 
+    { x: 60, y: -20, z: -8 }, 
+    { x: 40, y: 10, z: 3 }, 
+    { x: -10, y: 45, z: 3 }, 
+    { x: -70, y: 15, z: 8 }, 
+    { x: -70, y: -45, z: -10 }, 
+    { x: -15, y: -45, z: -2 }, 
+    { x: 45, y: 10, z: -12 }, 
+    { x: 30, y: 65, z: 9 }, 
+    { x: -30, y: 65, z: -8 }, 
+    { x: -45, y: 10, z: 4 }, 
+    { x: 15, y: -40, z: -8 }, 
+    { x: 70, y: -50, z: -3 }, 
+    { x: 75, y: 15, z: -23 }, 
+    { x: 15, y: 45, z: 8 }, 
+    { x: -30, y: 10, z: -4 }, 
+    { x: -45, y: -30, z: 6 }, 
+    { x: -55, y: -60, z: -16 }, 
+    { x: -40, y: -90, z: 3 }, 
+    { x: 30, y: -120, z: -11 }, 
+    { x: 85, y: -85, z: 12 }, 
+    { x: 80, y: -30, z: -15 }, 
+    { x: 50, y: -30, z: 4 }, 
+    { x: 20, y: -50, z: -14 }, 
+    { x: 0, y: -70, z: 4 }, 
+    { x: -40, y: -85, z: -4 }, 
+    { x: -85, y: -145, z: 22 }, 
+  ]; 
+
+  kame2_points = [
+    { x: 58, y: -104, z: -7 }, 
+    { x: 36, y: -90, z: 4 }, 
+    { x: 8, y: -73, z: -3 }, 
+    { x: -17, y: -51, z: 20 }, 
+    { x: -48, y: -27, z: -17 }, 
+    { x: -79, y: -30, z: -2 }, 
+    { x: -76, y: -81, z: -3 }, 
+    { x: -30, y: -115, z: -4 }, 
+    { x: 25, y: -95, z: -3 }, 
+    { x: 59, y: -61, z: -15 }, 
+    { x: 42, y: -26, z: 6 }, 
+    { x: 1, y: -8, z: -10 }, 
+    { x: -20, y: 10, z: 4 }, 
+    { x: -40, y: 30, z: -3 }, 
+    { x: -85, y: 20, z: 4 }, 
+    { x: -89, y: -37, z: -17 }, 
+    { x: -41, y: -61, z: 16 }, 
+    { x: 0, y: -50, z: 3 }, 
+    { x: 33, y: -23, z: -11 }, 
+    { x: 56, y: 7, z: 11 }, 
+    { x: 60, y: 35, z: -17 }, 
+    { x: 40, y: 70, z: 3 }, 
+    { x: -10, y: 105, z: 3 }, 
+    { x: -70, y: 75, z: 8 }, 
+    { x: -70, y: 15, z: -10 }, 
+    { x: -15, y: 15, z: -2 }, 
+    { x: 45, y: 70, z: -12 }, 
+    { x: 30, y: 125, z: 9 }, 
+    { x: -30, y: 125, z: -8 }, 
+    { x: -45, y: 70, z: 4 }, 
+    { x: 15, y: 20, z: -8 }, 
+    { x: 70, y: 10, z: 2 }, 
+    { x: 75, y: 75, z: -23 }, 
+    { x: 15, y: 105, z: 8 }, 
+    { x: -30, y: 70, z: -4 }, 
+    { x: -45, y: 30, z: 6 }, 
+    { x: -46, y: 6, z: -16 }, 
+    { x: -23, y: -20, z: 11 }, 
+    { x: 7, y: -48, z: -9 }, 
+    { x: 36, y: -62, z: 5 }, 
+    { x: 83, y: -37, z: 18 }, 
+    { x: 88, y: 20, z: -19 }, 
+    { x: 50, y: 30, z: 7 }, 
+    { x: 20, y: 10, z: -14 }, 
+    { x: 0, y: -10, z: 8 }, 
+    { x: -48, y: -28, z: 0 }, 
+    { x: -56, y: -69, z: -17 }, 
+    { x: -38, y: -90, z: 10 }, 
+    { x: -8, y: -109, z: -16 }, 
+    { x: 46, y: -113, z: 5 }, 
+    { x: 76, y: -62, z: -3 }, 
+    { x: 62, y: -36, z: 11 }, 
+    { x: 28, y: -58, z: -8 }, 
+    { x: 5, y: -70, z: 14 }, 
+    { x: -37, y: -90, z: -6 }, 
+    { x: -24, y: -136, z: 16 }, 
+    { x: 27, y: -140, z: 2 }, 
+    { x: 48, y: -103, z: -17 }, 
+]; 
 }
 /*
 function getPartsPoints(type, processNo) {
@@ -3142,6 +3413,179 @@ const partsPoints = {
       { x: -50, y: 45, z: -5}
     ],
   },
+  kame: {
+    process1: [
+      { x: -200, y: -90, z: -5 },
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 200, y: -90, z: 5 },
+    ],
+    process2: [
+      { x: 70, y: -120, z: 4 }, 
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 200, y: -90, z: 5 },
+    ],
+    process3: [
+      { x: 70, y: -120, z: 4 }, 
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 75, y: 15, z: -23 }, 
+      { x: 15, y: 45, z: 8 }, 
+      { x: -30, y: 10, z: -4 }, 
+      { x: -45, y: -30, z: 6 }, 
+      { x: -65, y: -120, z: -16 }, 
+    ],
+    process4: [
+      { x: -85, y: -80, z: -7 }, 
+      { x: -30, y: -120, z: 5 }, 
+      { x: 40, y: -90, z: -5 }, 
+      { x: 60, y: -60, z: 4 },  
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 75, y: 15, z: -23 }, 
+      { x: 15, y: 45, z: 8 }, 
+      { x: -30, y: 10, z: -4 }, 
+      { x: -45, y: -30, z: 6 }, 
+      { x: -65, y: -120, z: -16 }, 
+    ],
+    process5: [
+      { x: 85, y: -145, z: -15 }, 
+      { x: 40, y: -85, z: 3 }, 
+      { x: 0, y: -75, z: -4 }, 
+      { x: -20, y: -50, z: 4 }, 
+      { x: -40, y: -30, z: -3 }, 
+      { x: -70, y: -30, z: 4 }, 
+      { x: -85, y: -80, z: -7 }, 
+      { x: -30, y: -120, z: 5 }, 
+      { x: 40, y: -90, z: -5 }, 
+      { x: 60, y: -60, z: 4 },  
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 75, y: 15, z: -23 }, 
+      { x: 15, y: 45, z: 8 }, 
+      { x: -30, y: 10, z: -4 }, 
+      { x: -45, y: -30, z: 6 }, 
+      { x: -65, y: -120, z: -16 }, 
+    ],
+    process6: [
+      { x: 85, y: -145, z: -15 }, 
+      { x: 40, y: -85, z: 3 }, 
+      { x: 0, y: -75, z: -4 }, 
+      { x: -20, y: -50, z: 4 }, 
+      { x: -40, y: -30, z: -3 }, 
+      { x: -70, y: -30, z: 4 }, 
+      { x: -85, y: -80, z: -7 }, 
+      { x: -30, y: -120, z: 5 }, 
+      { x: 40, y: -90, z: -5 }, 
+      { x: 60, y: -60, z: 4 },  
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 75, y: 15, z: -23 }, 
+      { x: 15, y: 45, z: 8 }, 
+      { x: -30, y: 10, z: -4 }, 
+      { x: -45, y: -30, z: 6 }, 
+      { x: -55, y: -60, z: -16 }, 
+      { x: -40, y: -90, z: 3 }, 
+      { x: 30, y: -120, z: -11 }, 
+      { x: 85, y: -85, z: 12 }, 
+      { x: 80, y: -30, z: -15 }, 
+    ],
+    process7: [
+      { x: 85, y: -145, z: -15 }, 
+      { x: 40, y: -85, z: 3 }, 
+      { x: 0, y: -75, z: -4 }, 
+      { x: -20, y: -50, z: 4 }, 
+      { x: -40, y: -30, z: -3 }, 
+      { x: -70, y: -30, z: 4 }, 
+      { x: -85, y: -80, z: -7 }, 
+      { x: -30, y: -120, z: 5 }, 
+      { x: 40, y: -90, z: -5 }, 
+      { x: 60, y: -60, z: 4 },  
+      { x: 60, y: -20, z: -8 }, 
+      { x: 40, y: 10, z: 3 }, 
+      { x: -10, y: 45, z: 3 }, 
+      { x: -70, y: 15, z: 8 }, 
+      { x: -70, y: -45, z: -10 }, 
+      { x: -15, y: -45, z: -2 }, 
+      { x: 45, y: 10, z: -12 }, 
+      { x: 30, y: 65, z: 9 }, 
+      { x: -30, y: 65, z: -8 }, 
+      { x: -45, y: 10, z: 4 }, 
+      { x: 15, y: -40, z: -8 }, 
+      { x: 70, y: -50, z: -3 }, 
+      { x: 75, y: 15, z: -23 }, 
+      { x: 15, y: 45, z: 8 }, 
+      { x: -30, y: 10, z: -4 }, 
+      { x: -45, y: -30, z: 6 }, 
+      { x: -55, y: -60, z: -16 }, 
+      { x: -40, y: -90, z: 3 }, 
+      { x: 30, y: -120, z: -11 }, 
+      { x: 85, y: -85, z: 12 }, 
+      { x: 80, y: -30, z: -15 }, 
+      { x: 50, y: -30, z: 4 }, 
+      { x: 20, y: -50, z: -14 }, 
+      { x: 0, y: -70, z: 4 }, 
+      { x: -40, y: -85, z: -4 }, 
+      { x: -85, y: -145, z: 22 }, 
+    ],
+  },
   renzoku: {},
   renzoku2: {},
   renzokuL: {
@@ -3151,7 +3595,7 @@ const partsPoints = {
       { x: 70, y: -60, z: -5 },
     ],
     process2: [
-      { x: 70, y: -5, z: 0 },
+      { x: 70, y: -5, z: 10 },
       { x: 10, y: 5, z: -5 },
       { x: -40, y: -20, z: 5 },
       { x: -60, y: -60, z: -5 },
@@ -3181,7 +3625,7 @@ const partsPoints = {
       { x: 60, y: -60, z: 5 },
       { x: 40, y: -20, z: -5 },
       { x: -10, y: 5, z: 5 },
-      { x: -70, y: -5, z: 0 },
+      { x: -70, y: -5, z: -10 },
     ],
     process3: [
       { x: -70, y: -60, z: -5 },
@@ -3203,6 +3647,12 @@ const endPoints = {
     { x: -30, y: -65, z: 8 },
     { x: 30, y: -65, z: -8 },
     { x: 60, y: -30, z: -5 },
+  ], 
+  
+  kame: [
+    { x: -30, y: -135, z: 8 }, 
+    { x: 30, y: -135, z: -9 }, 
+    { x: 40, y: -85, z: -10 }, 
   ]
 }
 
@@ -3637,6 +4087,11 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
     cmWidth = shapeWidth / 50;
     cmLength = shapeLength /  50;
   }
+  if (type === 'kame') {
+    cmSize = shapeWidth / 50;
+  } else if (type === 'kame2') {
+    cmSize = shapeWidth / 50;
+  }
   // デフォルトのパラメータ
   let defaultParams = {
     numInnerCurves: 4,
@@ -3708,6 +4163,22 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
       3.0: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
       3.4: { numInnerCurves: 3, outerCurveWeight: 29, innerCurveWeight: 5 , materialCm: 30 }
     },
+    kame: {
+      1.5: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 , materialCm: 23},
+      2.3: { numInnerCurves: 2, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 30 },
+      3.0: { numInnerCurves: 3, outerCurveWeight: 20, innerCurveWeight: 5 , materialCm: 45 },
+      3.8: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 45},
+      4.3: { numInnerCurves: 5, outerCurveWeight: 30, innerCurveWeight: 5 , materialCm: 67 },
+      5.0: { numInnerCurves: 6, outerCurveWeight: 35, innerCurveWeight: 5 , materialCm: 67 },
+    },
+    kame2: {
+      1.5: { numInnerCurves: 1, outerCurveWeight: 10, innerCurveWeight: 5 , materialCm: 30},
+      2.3: { numInnerCurves: 2, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 45 },
+      3.0: { numInnerCurves: 3, outerCurveWeight: 20, innerCurveWeight: 5 , materialCm: 60 },
+      3.8: { numInnerCurves: 4, outerCurveWeight: 25, innerCurveWeight: 5 , materialCm: 60},
+      4.3: { numInnerCurves: 5, outerCurveWeight: 30, innerCurveWeight: 5 , materialCm: 67 },
+      5.0: { numInnerCurves: 6, outerCurveWeight: 35, innerCurveWeight: 5 , materialCm: 90 },
+    },
     // その他のモデルが追加される場合はここに定義
     other: {
       1: { numInnerCurves: 1, outerCurveWeight: 12, innerCurveWeight: 5 , materialCm: 30 },
@@ -3727,67 +4198,81 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   }
 
   let renzokuNum;
+  let closestParams, closestSize;
   if (type === 'renzoku') {
     let sizeDifference = Math.abs(shapeWidth - shapeLength);
-    if (sizeDifference >= 330) {
-      renzokuNum = 8;
-    } else if (sizeDifference >= 310) {
-      renzokuNum = 7;
-    } else if (sizeDifference >= 280) {
-      renzokuNum = 6;
-    } else if (sizeDifference >= 230) {
-      renzokuNum = 5;
-    } else if (sizeDifference >= 180) {
-      renzokuNum = 4;
-    } else if (sizeDifference >= 130) {
-      renzokuNum = 3;
-    } else {
-      renzokuNum = 2;
+    if (shapeWidth <= 50) {
+      renzokuNum = Math.max(2, Math.min(8, Math.floor(sizeDifference / 20)));
+      shape.renzokuNum = renzokuNum;
+      closestParams = Object.values(params.renzoku[renzokuNum])[0];
+      shape.scale = 0.3;
     }
-    shape.renzokuNum = renzokuNum;
   }
-  let closestParams, closestSize;
-  if (cmSize) {
-    // 使用可能なサイズキーを取得して、数値に変換
-    let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
-    // 初期値として最も近いサイズを最初の要素に設定
-    closestSize = availableSizes[0];
-    // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
-    for (let i = 1; i < availableSizes.length; i++) {
-      let currentSize = availableSizes[i];
-      // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
-      if (currentSize > cmSize) {
-        break;
+  if(type === 'renzoku') {
+    let sizeDifference = Math.abs(shapeWidth - shapeLength);
+    if (shapeWidth > 50) {
+      if (sizeDifference >= 330) {
+        renzokuNum = 8;
+      } else if (sizeDifference >= 310) {
+        renzokuNum = 7;
+      } else if (sizeDifference >= 280) {
+        renzokuNum = 6;
+      } else if (sizeDifference >= 230) {
+        renzokuNum = 5;
+      } else if (sizeDifference >= 180) {
+        renzokuNum = 4;
+      } else if (sizeDifference >= 130) {
+        renzokuNum = 3;
+      } else {
+        renzokuNum = 2;
       }
-      closestSize = currentSize;
-    }
-  // 最も近いサイズに対応するパラメータを shape に適用
-  closestParams = params[type][closestSize];
-    //console.log(closestParams);
-  } else if (type === 'renzoku'){// 使用可能なサイズキーを取得して、幅と高さに分解し、数値に変換
-    let availableKeys = Object.keys(params.renzoku[renzokuNum]);
-    let closestKey = availableKeys[0];
-    let minDifference = Infinity;
-    
-    // 各キーを比較して、誤差の合計が最小のキーを探す
-    for (let i = 0; i < availableKeys.length; i++) {
-      let currentKey = availableKeys[i];
-      let [widthKey, lengthKey] = currentKey.split('-').map(Number);
-    
-      let widthDifference = Math.abs(widthKey - cmWidth);
-      let lengthDifference = Math.abs(lengthKey - cmLength);
-    
-      // 誤差の合計を計算
-      let totalDifference = widthDifference + lengthDifference;
-      //console.log(widthDifference, lengthDifference, totalDifference);
-    
-      // 最も小さい誤差のキーを探す
-      if (totalDifference < minDifference) {
-        minDifference = totalDifference;
-        closestKey = currentKey;
+      shape.renzokuNum = renzokuNum;
+      // 使用可能なサイズキーを取得して、幅と高さに分解し、数値に変換
+      let availableKeys = Object.keys(params.renzoku[renzokuNum]);
+      let closestKey = availableKeys[0];
+      let minDifference = Infinity;
+      
+      // 各キーを比較して、誤差の合計が最小のキーを探す
+      for (let i = 0; i < availableKeys.length; i++) {
+        let currentKey = availableKeys[i];
+        let [widthKey, lengthKey] = currentKey.split('-').map(Number);
+      
+        let widthDifference = Math.abs(widthKey - cmWidth);
+        let lengthDifference = Math.abs(lengthKey - cmLength);
+      
+        // 誤差の合計を計算
+        let totalDifference = widthDifference + lengthDifference;
+        //console.log(widthDifference, lengthDifference, totalDifference);
+      
+        // 最も小さい誤差のキーを探す
+        if (totalDifference < minDifference) {
+          minDifference = totalDifference;
+          closestKey = currentKey;
+        }
+        closestParams = params.renzoku[renzokuNum][closestKey];
       }
     }
-    closestParams = params.renzoku[renzokuNum][closestKey];
+  } else {
+    if (cmSize) {
+      console.log(cmSize);
+      // 使用可能なサイズキーを取得して、数値に変換
+      let availableSizes = Object.keys(params[type]).map(size => Number(size)).sort((a, b) => a - b);
+      // 初期値として最も近いサイズを最初の要素に設定
+      closestSize = availableSizes[0];
+      // 各サイズと比較して、cmSize以下でcmSizeに最も近いサイズを探す
+      for (let i = 1; i < availableSizes.length; i++) {
+        let currentSize = availableSizes[i];
+        // 現在のサイズがcmSizeを超えたらループを終了、越える直前のものをサイズとして設定
+        if (currentSize > cmSize) {
+          break;
+        }
+        closestSize = currentSize;
+      }
+      // 最も近いサイズに対応するパラメータを shape に適用
+      closestParams = params[type][closestSize];
+      console.log(closestSize);
+      //console.log(closestParams);
+    }
   }
 
   shape.numInnerCurves = closestParams.numInnerCurves;
@@ -3796,6 +4281,10 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   if(type === 'aioien'){
     shape.outerCurveWeight = cmSize * 4.8;  // shapeSize に基づいてスケール
     // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
+  } else if(type === 'kame'){
+    shape.outerCurveWeight = closestParams.outerCurveWeight;  // shapeSize に基づいてスケール
+  } else if(type === 'kame2'){
+    shape.outerCurveWeight = closestParams.outerCurveWeight;  // shapeSize に基づいてスケール
   } else if(cmSize){
     shape.outerCurveWeight = cmSize * 8;  // shapeSize に基づいてスケール
     // ↑図形によって難しいようなら各パラメータのouterCurveWeightの場所に調整値を入れる
@@ -3812,6 +4301,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
   } else {
     shape.materialCm = closestParams.materialCm;
   }
+  //console.log(shape.outerCurveWeight);
 }
 
 function getMaterialColor (){
@@ -3877,7 +4367,17 @@ function getMaterialColor (){
               // 接続ペアを記録
               renderedGroups.add(connectionKey);  
             }
-          }});
+          }
+        });
+        material.forEach(item => {
+          if (item.cm === 53) {
+            item.cm = 60;
+          } else if (item.cm === 68) {
+            item.cm = 67;
+          } else if (item.cm === 75 || item.cm === 83) {
+            item.cm = 90;
+          }
+        });
       } else {
         for (let i = 0; i < shape.numInnerCurves; i++) {
           let color;
@@ -4232,6 +4732,10 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1, parts_f, pr
     } else if (shape.type === 'renzoku') {
       const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
       scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+    } else if (shape.type === 'kame') {
+      scaleValue = shape.scale  * 1.2;
+    } else if (shape.type === 'kame2') {
+      scaleValue = shape.scale  * 1.4;
     } else {
       scaleValue = shape.scale * 1.62; // デフォルト値
     }
@@ -4702,6 +5206,12 @@ function adjustControlPoints(shape) {
   } else if (shape.type === 'aioien') {
     scaleValue = shape.scale * 1.3;
     points = aioien_points;
+  } else if (shape.type === 'kame') {
+    scaleValue = shape.scale  * 1.2;
+    points = kame_points;
+  } else if (shape.type === 'kame2') {
+    scaleValue = shape.scale  * 1.4;
+    points = kame2_points;
   }
   //let adjusted = points;
   let adjusted = JSON.parse(JSON.stringify(points));  // ディープコピー
@@ -4782,7 +5292,7 @@ function adjustControlPoints(shape) {
     }
   }
   //console.log(type, shape.type);
-  //console.log(adjusted, points);
+  //console.log(adjusted, points, endPoints[type]);
   //console.log('1');
   if (Array.isArray(adjusted[0])) {//切断された場合
     return [adjusted[0], adjusted[1]];
@@ -4842,6 +5352,8 @@ function getConnectShapeProcess (p, shape1, layerIndex, shapeIndex, processNo) {
     } else if (shape.type === 'renzoku') {
       const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
       scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
+    } else if (shape.type === 'kame') {
+      scaleValue = shape.scale  * 1.1;
     } else {
       scaleValue = shape.scale * 1.62; // デフォルト値
     }
@@ -4962,7 +5474,7 @@ function getConnectShapeProcess (p, shape1, layerIndex, shapeIndex, processNo) {
         processPoints = processPoints.map(segment =>
           segment.map(point => ({
             x: point.x,
-            y: point.y + 300 - t - s* 10,
+            y: point.y + 300 - t + s* 50,
             z: point.z // z座標はそのまま保持
           }))
         );
