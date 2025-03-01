@@ -1,35 +1,14 @@
-//let shapes = [];
 let layers = [];
-//let mode2D = true;
 let ume_points = [], awaji_points = [], awajiRl_points = [], awajiRr_points = [], renzoku_points = [], aioien_points = [], kame_points = [], kame2_points = [];
-//let currentType = null;
 let innerCurvesData = [];
-//let selectedCurve = null;
-//let cameraFixed = false;
-//let nowKey = null;
-//let nowShapeKey = -1;
-//let nowIndexKey = -1;
-//let originalColor = null;
-//let selectedShape = null;
 let layerList;
-//let fixFrontButton;
-//let mode2D_f = 0;
 let compShapes = [];
 let sketch2, modalSketch;
 let partsSketches = [];
-let selectedCurveIndex;
+//let selectedCurveIndex;
 
 let outerCurveWeight = 30;
 let innerCurveWeight = 5;
-/*
-let innerCurveColors = [
-  { r: 201, g: 23, b: 30 },
-  { r: 187, g: 188, b: 222 },
-  { r: 201, g: 23, b: 30 },
-  { r: 187, g: 188, b: 222 },
-  { r: 201, g: 23, b: 30 },
-  { r: 187, g: 188, b: 222 },
-];*/
 let innerCurveColors = [
   { r: 165, g: 42, b: 42 },
   { r: 165, g: 42, b: 42 },
@@ -41,32 +20,31 @@ let innerCurveColors = [
 let id = 0;
 let selectedcustomizeShape = null;
 
+// デザインタブ
 let sketch1 = new p5((p) => {
   let canvas;
-  let mode2D = true;
+  let mode2D = true;// 図形モードと変換後のフラグ
+  let mode2D_f = 0;
   let currentType = null;
   let selectedCurve = null;
-  let cameraFixed = false;
-  let nowKey = null;
+  let cameraFixed = false;//カメラ固定フラグ
+  let fixFrontButton;//カメラ固定ボタン
+  let nowKey = null;//カーブ選択に使用
   let nowShapeKey = -1;
   let nowIndexKey = -1;
   let originalColor = null;
-  let selectedShape = null;
-  let selectedLayerIndex = null;
-  let fixFrontButton;
-  let mode2D_f = 0;
+  let selectedShape = null;//図形移動
+  let selectedLayerIndex = null;//多分いらない
   let pg;
-  let highlightedShapeIndex = -1;
+  let highlightedShapeIndex = -1;//緑の円
   let highlightedLayerIndex = -1;
-  let isLayerManipulating = false;
+  let isLayerManipulating = false;//レイヤーリストの表示非表示
   let selectedColor = null;
   let pendingShape = null;
   let resizeCornerSize = 10;
-  let resizing = null;
+  let resizing = null;//サイズ変更
   let angle = 0; // 回転角度の初期値
-  let previousMouseX; // 前のマウスのX座標
-  let slider; // スライダーの変数
-  let customizeShapeIndex = -1;
+  let customizeShapeIndex = -1;//図形詳細設定、選択された図形
   let customizeLayerIndex = -1;
 
   p.setup = function() {
@@ -252,6 +230,7 @@ let sketch1 = new p5((p) => {
                     if (shape.color == otherShape.color && connectorSet.isConnected == null && otherConnectorSet.isConnected == null && distance <= connectionDistance) {
                       connectorSet.isConnected = { shape: otherShape, setIndex: otherSetIndex };
                       otherConnectorSet.isConnected = { shape: shape, setIndex: setIndex };
+                      //モデルの接続部分を切断（繋げられるように）
                       if (setIndex == 0) {
                         shape.flags.end = true;
                       } else {
@@ -268,6 +247,7 @@ let sketch1 = new p5((p) => {
                       otherConnectorSet.isConnected = null;
                     }
 
+                    //切断接続ボタンを勝手に切り替えられないように無効化
                     if (selectedcustomizeShape) {
                       let endCuttingButton = document.getElementById("end-cutting-button");
                       let middleCuttingButton = document.getElementById("middle-cutting-button");
@@ -338,11 +318,12 @@ let sketch1 = new p5((p) => {
         });
       });
       
-      // サイズを変更する処理
+      // サイズを変更する処理（ここでは要らないんじゃね？）
       if (resizing) {
-        p.resizeShape(resizing);
+        //p.resizeShape(resizing);
       }
-      // マウスオーバー時ハイライトの描画
+
+      // マウスオーバー時ハイライトの描画（緑の円）
       if (highlightedShapeIndex !== -1 && highlightedLayerIndex !== -1) {
         const layer = layers[highlightedLayerIndex];
         try {
@@ -363,7 +344,7 @@ let sketch1 = new p5((p) => {
           console.error('Shape or Layer not found for indices:', highlightedLayerIndex, highlightedShapeIndex);
         }
       }
-      // 図形選択ハイライトの描画
+      // 図形選択ハイライトの描画（赤の円）
       if (customizeShapeIndex !== -1 && customizeLayerIndex !== -1) {
         const layer = layers[customizeLayerIndex];
         try {
@@ -389,7 +370,7 @@ let sketch1 = new p5((p) => {
       drawAxis(p);
       
       if (!cameraFixed && !isLayerManipulating) {
-        p.orbitControl();
+        p.orbitControl();//カメラ動かせる関数
       } else if (cameraFixed) {
         // カメラを正面に固定
         p.camera(0, 0, defaultCameraZ, 0, 0, 0, 0, 1, 0);
@@ -399,7 +380,7 @@ let sketch1 = new p5((p) => {
       layers.forEach((layer, layerIndex) => {
         layer.shapes.forEach((shape, index) => {
 
-          // 
+          // 切断接続処理を行う関数
           let adjustedPoints = adjustControlPoints(shape);
 
           let connected = false;
@@ -498,6 +479,7 @@ let sketch1 = new p5((p) => {
     }
   }
 /*
+  //３Dモードでテキスト書くやつ
   p.drawLabels = function () {
     // オフスクリーンバッファをクリア
     pg.clear();
@@ -547,6 +529,7 @@ let sketch1 = new p5((p) => {
     p.pop();
   }
 */
+
   //逆三角形の描画
   p.drawInvertedTriangle = function (shape, x, y, d) {
     p.push();
@@ -711,6 +694,7 @@ let sketch1 = new p5((p) => {
     }
     p.pop();
   }
+
   p.drawKame2 = function (x, y, w, l) {
     // 半楕円を描画
     p.arc(x, y, w, l, 0, p.TWO_PI);
@@ -778,9 +762,9 @@ let sketch1 = new p5((p) => {
       newShape = {
         id: id++,
         type: type,
-        x: p.width/2,
+        x: p.width/2,//座標
         y: p.height/2,
-        w: shapeWidth,
+        w: shapeWidth,//縦と横
         l: shapeLength,
         scale: Math.max(shapeLength, shapeWidth) / 500,
         rotation: 0,
@@ -934,8 +918,8 @@ let sketch1 = new p5((p) => {
     let colorSelector = document.getElementById('color-selector');
     colorSelector.querySelectorAll('.color-option').forEach(button => {
       button.addEventListener('click', () => {
-        selectedColor = button.getAttribute('data-color');
-        if (mode2D == true) {// 図景全体の色設定
+        selectedColor = button.getAttribute('data-color');//選択した色を取得
+        if (mode2D == true) {// 図形全体の色設定
           colorSelector.classList.add('hidden');
           if (pendingShape) {
             p.addDecidedShape();
@@ -946,6 +930,7 @@ let sketch1 = new p5((p) => {
           let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
           innerCurvesData[layerIndex][shapeIndex][curveIndex].color = selectedColor;
           
+          //innerCurvesDataに色を設定
           p.changeSelectedCurveColor(button.getAttribute('data-color'));
           
           // カーブ番号の選択をリセット
@@ -984,16 +969,18 @@ let sketch1 = new p5((p) => {
     });
   }
 
+  //図形追加２段階目、色を設定してレイヤーに格納
   p.addDecidedShape = function () {
     if (pendingShape && selectedColor) {
         pendingShape.color = selectedColor;
         //pendingShape.innerCurveColor = selectedColor; // インナーカーブ用の色も設定
+        //新しいレイヤー作って、そこに図形を格納
         let newLayer = {name: `Layer ${layers.length + 1}`, shapes: [pendingShape]};
         layers.push(newLayer);
 
         p.updateLayerList();
         
-        // zIndexを設定
+        // zIndexを設定（zの値を設定、レイヤー毎に８ずつ増加）
         let zOffset = 0;
         layers.forEach(layer => {
             layer.shapes.forEach(shape => {
@@ -1002,7 +989,7 @@ let sketch1 = new p5((p) => {
             zOffset += 8;
         });
 
-        // compShapesを更新
+        // compShapesを更新（ちょっとよくわかんない）
         compShapes = layers.flatMap(layer => layer.shapes);
   
         // innerCurvesData の初期化
@@ -1017,7 +1004,7 @@ let sketch1 = new p5((p) => {
     }
   }
 
-  //2D->3Dへの変換
+  //2D<->3Dへの変換（変換ボタンが押された時の関数）
   p.convert = function () {
     if (mode2D && layers.length > 0) {
       mode2D = false;
@@ -1063,6 +1050,7 @@ let sketch1 = new p5((p) => {
         
       // sketch2を再初期化
       //initializeTab2();
+
       //接続した結果90を超える長さになるなら変換不可
       let material = getMaterialColor();
       for (const [color, values] of Object.entries(material)) {
@@ -1240,6 +1228,7 @@ let sketch1 = new p5((p) => {
     return params[type][cmSize];
   }
 */
+  //カメラ固定の関数
   p.toggleFixedFrontView = function () {
     cameraFixed = !cameraFixed;
   }
@@ -1258,9 +1247,9 @@ let sketch1 = new p5((p) => {
               innerCurvesData[layerIndex][shapeIndex][curveIndex]) {
             selectedCurve = { layerIndex: layerIndex, shapeIndex: shapeIndex, curveIndex: curveIndex };
             //console.log("Selected curve:", selectedCurve);
-            originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;
-            p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
-          } else {
+            originalColor = innerCurvesData[layerIndex][shapeIndex][curveIndex].color;//ハイライトする前に現状の色を覚えさせておいて、ハイライト解除しても大丈夫なようにする
+            p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色でハイライト
+          } else {//そんなカーブ存在しません
             console.log("Invalid curve index");
             originalColor = null;
             nowKey = null;
@@ -1285,117 +1274,8 @@ let sketch1 = new p5((p) => {
       }
     }
   }
-/*
-  p.keyPressed = function () {
-    if (!mode2D && cameraFixed) {
-      if (p.key === 'c' || p.key === 'C') {
-        console.log('c key pressed');
-        if (selectedCurve) {
-          p.resetSelectedCurveColor();
-          p.resetSelectionState();
-        } 
-        nowKey = 'c';
-        nowLayerKey = -1;
-        nowShapeKey = -1;
-        nowIndexKey = -1;
-      }
-      
-      if (nowKey === 'c') {
-        if (nowLayerKey === -1) {
-          // レイヤー選択フェーズ
-          if (p.key >= '0' && p.key <= '9') {
-            nowLayerKey = parseInt(p.key);
-            if (nowLayerKey < layers.length) {
-              console.log("Selected layer:", nowLayerKey);
-            } else {
-              console.log("Invalid layer index");
-              nowLayerKey = -1;
-            }
-          }
-        } else if (nowShapeKey === -1) {
-          // 図形選択フェーズ
-          if (p.key >= '0' && p.key <= '9') {
-            nowShapeKey = parseInt(p.key);
-            if (nowShapeKey < layers[nowLayerKey].shapes.length) {
-              console.log("Selected shape:", nowShapeKey);
-            } else {
-              console.log("Invalid shape index");
-              nowShapeKey = -1;
-            }
-          }
-        } else if (nowIndexKey === -1) {
-          // カーブ選択フェーズ
-          if (p.key >= '0' && p.key <= '9') {
-            nowIndexKey = parseInt(p.key);
-            let shape = layers[nowLayerKey].shapes[nowShapeKey];
-            if (innerCurvesData[nowLayerKey] && 
-                innerCurvesData[nowLayerKey][nowShapeKey] && 
-                innerCurvesData[nowLayerKey][nowShapeKey][nowIndexKey]) {
-              selectedCurve = { layerIndex: nowLayerKey, shapeIndex: nowShapeKey, curveIndex: nowIndexKey };
-              console.log("Selected curve:", selectedCurve);
-              p.changeSelectedCurveColor({ r: 255, g: 255, b: 0 }); // 黄色
-            } else {
-              console.log("Invalid curve index");
-              nowIndexKey = -1;
-            }
-          }
-        }
-      }
-    }
-  }
-  */
-  /*
-  function mouseClicked() {
-    if (!mode2D && cameraFixed) {
-      let clickedCurve = findClickedCurve();
-      if (clickedCurve) {
-        selectedCurve = clickedCurve;
-        console.log("Selected curve:", selectedCurve);
-      }
-    }
-  }
 
-  function findClickedCurve() {
-    if (cameraFixed) {
-      let mouseVector = createVector(mouseX - width / 2, mouseY - height / 2);
-
-      for (let i = 0; i < innerCurvesData.length; i++) {
-        let shape = shapes[i];
-        let shapePos = createVector(shape.x - width / 2, shape.y - height / 2);
-
-        for (let j = 0; j < innerCurvesData[i].length; j++) {
-          let curve = innerCurvesData[i][j];
-          if (isPointOnCurve(mouseVector, shapePos, curve.points, shape.scale)) {
-            return { shapeIndex: i, curveIndex: j };
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-
-  function isPointOnCurve(mousePos, shapePos, points, scale) {
-    for (let i = 0; i < points.length - 1; i++) {
-      let p1 = createVector(points[i].x, points[i].y).mult(scale).add(shapePos);
-      let p2 = createVector(points[i + 1].x, points[i + 1].y).mult(scale).add(shapePos);
-
-      if (distToSegment(mousePos, p1, p2) < 10) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  function distToSegment(p, v, w) {
-    let l2 = p5.Vector.sub(v, w).magSq();
-    if (l2 == 0) return p.dist(v);
-    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-    t = constrain(t, 0, 1);
-    return p.dist(p5.Vector.lerp(v, w, t));
-  }
-  */
-
+  //innerCurvesDataに色を設定
   p.changeSelectedCurveColor = function (color) {
     if (selectedCurve) {
       let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
@@ -1407,6 +1287,7 @@ let sketch1 = new p5((p) => {
     }
   }
 
+  //色変更やめたい時、元に戻す
   p.resetSelectedCurveColor = function () {
     if (selectedCurve && originalColor) {
       let { layerIndex, shapeIndex, curveIndex } = selectedCurve;
@@ -1418,15 +1299,7 @@ let sketch1 = new p5((p) => {
     }
   }
 
-  p.resetSelectionState = function () {
-    nowKey = '';
-    nowLayerKey = -1;
-    nowShapeKey = -1;
-    nowIndexKey = -1;
-    selectedCurve = null;
-    originalColor = null;
-  }
-
+  //図形のリサイズ、図形移動の関数
   p.mousePressed = function () {
     // リサイズ処理
     for (let layerIndex = layers.length - 1; layerIndex >= 0; layerIndex--) {
@@ -1521,6 +1394,7 @@ let sketch1 = new p5((p) => {
     }
   }
   
+  //図形のリサイズ、図形移動の関数
   p.mouseDragged = function () {
     // リサイズ処理
     if (resizing) {
@@ -1529,6 +1403,7 @@ let sketch1 = new p5((p) => {
     // 図形移動
     if (mode2D && selectedShape && document.getElementById('tab1').checked) {
       if (selectedShape.d) {
+        //constrain = 動的な数値(mouseXなど)をconstrainに渡すと、指定した範囲を超えない数値を返してくれる関数
         selectedShape.x = p.constrain(p.mouseX, selectedShape.d/2, p.width - selectedShape.d/2);
         selectedShape.y = p.constrain(p.mouseY, selectedShape.d/2, p.height - selectedShape.d/2);
       } else {
@@ -1538,6 +1413,7 @@ let sketch1 = new p5((p) => {
     }
   }
   
+  //図形のリサイズ、図形移動の関数
   p.mouseReleased = function () {
     // リサイズ処理
     if (resizing) {
@@ -1550,6 +1426,7 @@ let sketch1 = new p5((p) => {
     }
   }
 
+  //リサイズ処理、最大最小を決めてる
   p.resizeShape = function (resizing) {
     let layer = layers[resizing.layerIndex];
     let shape = layer.shapes[resizing.shapeIndex];
@@ -1567,6 +1444,7 @@ let sketch1 = new p5((p) => {
       maxSize = 200;
       shape.d = p.constrain(p.dist(shape.x, shape.y, p.mouseX, p.mouseY) * 2, minSize, maxSize);
     } else if (shape.type === 'renzoku') {
+      //この縦横比だと作れないとかあるかもしれないので細かく設定しよう！
       minWidth = 30;
       maxWidth = 150;
       minLength = 70;
@@ -1604,6 +1482,7 @@ let sketch1 = new p5((p) => {
     layerList.classList.toggle('hidden');
   }
 
+  //レイヤーリストの操作
   p.updateLayerList = function () {
     layerList.innerHTML = '';
 
@@ -1614,7 +1493,7 @@ let sketch1 = new p5((p) => {
       layerItem.innerHTML = `
         <span class="layer-name">${layer.name}</span>
         <ul class="shape-list"></ul>
-      `;
+      `;//Layer1 、２、３とかの部分
 
       const shapeList = layerItem.querySelector('.shape-list');
 
@@ -1625,7 +1504,7 @@ let sketch1 = new p5((p) => {
         shapeItem.innerHTML = `
           <span class="drag-handle">&#9776;</span>
           <span>${shape.type} ${shapeIndex}</span>
-        `;
+        `;//awaji 1とかの部分
 
         shapeItem.addEventListener('dragstart', (e) => p.dragStart(e, 'shape', layerIndex, shapeIndex));
         shapeItem.addEventListener('dragover', p.dragOver);
@@ -1643,6 +1522,7 @@ let sketch1 = new p5((p) => {
           //p.redraw();
         });
 
+        //マウスをどかしたらハイライト消す
         shapeItem.addEventListener('mouseout', () => {
           highlightedShapeIndex = -1;
           highlightedLayerIndex = -1;
@@ -1675,6 +1555,7 @@ let sketch1 = new p5((p) => {
     });
   }
 
+  //type = shapeをドラッグしてるかレイヤーをドラッグしてるか
   p.dragStart = function (e, type, layerIndex, shapeIndex) {
     isLayerManipulating = true;
     e.stopPropagation(); // イベントの伝播を停止
@@ -1696,9 +1577,10 @@ let sketch1 = new p5((p) => {
     const data = JSON.parse(e.dataTransfer.getData('text'));
     const { type, layerIndex, shapeIndex } = data;
 
-    let dropTarget = e.target;
-    let dropType = 'layerList'; // デフォルトはレイヤーリスト全体
+    let dropTarget = e.target;//ドロップ先
+    let dropType = 'layerList'; // ドロップ先のタイプ（デフォルトはレイヤーリスト全体）
 
+    //マウスが近いやつでタイプを決定（レイヤーかshapeか）
     if (dropTarget.closest('.shape-item')) {
       dropType = 'shape';
       dropTarget = dropTarget.closest('.shape-item');
@@ -1714,6 +1596,7 @@ let sketch1 = new p5((p) => {
       draggingElement.classList.remove('dragging');
     }
 
+    //レイヤーの順番を変更
     if (type === 'layer' && dropType === 'layer') {
       const dropLayerIndex = Array.from(layerList.children).indexOf(dropTarget);
 
@@ -1724,7 +1607,7 @@ let sketch1 = new p5((p) => {
         const [draggedCurveData] = innerCurvesData.splice(layerIndex, 1);// innerCurvesData からドラッグされたレイヤーに対応するデータを取り出し、削除
         innerCurvesData.splice(dropLayerIndex, 0, draggedCurveData);// 削除したデータをドロップ先のインデックスに挿入
       }
-    } else if (type === 'shape') {
+    } else if (type === 'shape') {//図形を他のレイヤーに移動
       let dropLayerIndex;
       let dropShapeIndex = -1;
 
@@ -1858,7 +1741,7 @@ let sketch1 = new p5((p) => {
       layer.shapes.forEach(shape => {
         shape.zIndex = zOffset;
       });
-      zOffset += 15;
+      zOffset += 8;
     });
   }
 
@@ -1871,6 +1754,7 @@ let sketch1 = new p5((p) => {
     // スライダーの値を選択した図形の回転度に設定
     document.getElementById('rotation-slider').value = selectedcustomizeShape.rotation;
 
+    //切断接続のボタン、図形によってあるのとないのとがある
     if (selectedcustomizeShape.type === 'awaji' || selectedcustomizeShape.type === 'kame') {
       document.getElementById('cutting-button-container').classList.remove('hidden');
       // ボタンの取得
@@ -2353,7 +2237,7 @@ function initializeTab2() {
         let totalProcesses;
         let middle_f = 0;
         let end_f = 0; 
-        let shape2;
+        let shape2;//接続相手
         if (connect_f == 1) {       
           let shape1ConnectSet, shape2ConnectSet; 
           shape.connectors.forEach((connectorSet, index) => {
@@ -2367,7 +2251,7 @@ function initializeTab2() {
               shape2ConnectSet = index; // shape2 の接続セットインデックスを取得
             }
           });
-          let total1, total2;
+          let total1, total2;//それぞれの全体のプロセス数
           if (shape.type === 'renzoku') {
             total1 = (shape.renzokuNum-1)*4+4;
             if (shape1ConnectSet == 0) {
@@ -2404,11 +2288,11 @@ function initializeTab2() {
               const copiedArray = [...lastArray];
               //console.log(lastArray);
               // 配列の中央の要素2つを削除して分割
-              const midIndex = Math.floor(copiedArray[0].length / 2);
+              const midIndex = Math.floor(copiedArray[0].length / 2);//中央を計算して
               const firstPart = [...copiedArray[0].slice(0, midIndex - 1), { x: 90, y: 90+(shape2.renzokuNum-1)*90, z: 0 }]; // 中央の前まで
               const secondPart = [{ x: -90, y: 90+(shape2.renzokuNum-1)*90, z: 0 }, ...copiedArray[0].slice(midIndex + 1)]; // 中央の後から
               
-              // 新しいプロセスキーを生成
+              // 新しいプロセスキーを生成（プロセス数を増やす）
               const newProcessKey = `process${Object.keys(partsPoints['renzoku2']).length + 1}`;
               partsPoints['renzoku2'][newProcessKey] = [firstPart, secondPart];
               total2++;
@@ -2459,6 +2343,7 @@ function initializeTab2() {
 
         // ボタンの状態を更新する関数
         function updateButtonStates() {
+          //0より下にはいけない、最大プロセス数より上にはいけない
           prevButton.disabled = processNo <= 0;
           nextButton.disabled = processNo >= totalProcesses;
 
@@ -2619,7 +2504,8 @@ function drawAxis(p) {
 }
 
 function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
-  //console.log(point);
+  //processNo = -1 -> 作り方以外の描画、1~だったら、そのプロセス数のモデルの描画
+  //parts_f = 1 -> パーツ一覧のキャンバス用で、キャンバス中央、回転なしで描画
   p.push();
   if (parts_f == 1) {
     p.translate(0, 0, 0);
@@ -2643,7 +2529,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
       } else if (shape.type === 'renzoku') {
         const scaleFactors = [0, 1.4, 1.7, 1.3, 1.1, 0.9, 0.8, 0.65, 0.55]; // インデックス0は使用しない
         scaleValue = shape.scale * scaleFactors[shape.renzokuNum];
-        points = [renzokuAwaji(shape.renzokuNum)];//何連続か
+        //points = [renzokuAwaji(shape.renzokuNum)];//何連続か
         points = point;
       } else if (shape.type === 'aioien') {
         scaleValue = shape.scale * 1.3;
@@ -2657,7 +2543,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
       }
     p.scale(scaleValue);
     }
-  } else {
+  } else {//モデルのタイプとプロセス数を渡して制作途中のモデルの配列をもらう
     if (shape.type === 'connect') {
       points = point;
       scaleValue = 1;
@@ -2684,6 +2570,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
   if (shape.type == 'connect') {
     //console.log(points);
     // 選ばれたインデックスを取得
+    //接続元と接続相手のインナーカーブの数を取得して、大きい方に合わせる
     let selectedIndex = shape.shape[0].numInnerCurves > shape.shape[1].numInnerCurves ? 0 : 1;
     innerCurves = createInnerCurvesConnect(p, points, shape.shape[selectedIndex].numInnerCurves, shape.shape[selectedIndex].outerCurveWeight, shape.innerCurveWeight);
   } else {
@@ -2692,7 +2579,7 @@ function drawShape(p, shape, layerIndex,shapeIndex, parts_f, processNo, point) {
 //console.log(innerCurves);
   p.noFill();
   if (shape.innerCurveWeight) {
-    p.strokeWeight(shape.innerCurveWeight);
+    p.strokeWeight(shape.innerCurveWeight);//水引の太さ（全部同じ）
   }
   let shapeInnerCurves = [];
   /*
@@ -3078,6 +2965,7 @@ function getPartsPoints(type, processNo) {
   };
 }*/
 
+//それぞれの工程ごとの配列
 const partsPoints = {
   awaji: {
     process1: [
@@ -3642,6 +3530,7 @@ const partsPoints = {
   }
 };
 
+//モデルの端が繋がってる場合（flag_end）（上部）の補助配列
 const endPoints = {
   awaji: [
     { x: -30, y: -65, z: 8 },
@@ -3656,12 +3545,14 @@ const endPoints = {
   ]
 }
 
+//モデルの中間ポイント（下部）が切断されてる場合の補助配列
 const middlePoints = {
   awaji: [
     { x: 90, y: 90, z: 0 },
     { x: -90, y: 90, z: 0 }
   ]
 }
+
 function getTotalProcesses(type) {
   const selectedParts = partsPoints[type];
   return Object.keys(selectedParts).length;
@@ -3930,6 +3821,7 @@ function drawCurveFromPoints(p, curves, shapeNum1, shapeNum2, index) {
     for (let i = 0; i < curves.length; i++) {
       const pt = curves[i];
       // 描画をスキップする条件
+      // 2つのモデルでインナーカーブの本数が違う場合、必要ないところはスキップして描画しないようにする
       if ((index >= shapeNum1 && pt.shape === "shape1") || (index >= shapeNum2 && pt.shape === "shape2")) {
         if (drawing && i != 0) {
           // 描画中ならシェイプを終了
@@ -3960,6 +3852,7 @@ function drawCurveFromPoints(p, curves, shapeNum1, shapeNum2, index) {
   }
 }
 
+//接続されてないモデル用
 function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCurveWeight) {
   let innerCurves = [];
   /*
@@ -4006,6 +3899,7 @@ function createInnerCurves(p, points, numInnerCurves, outerCurveWeight, innerCur
   return innerCurves; // [[innerCurves1], [innerCurves2]] の形で返す
 }
 
+//接続モデル用
 function createInnerCurvesConnect(p, points, numInnerCurves, outerCurveWeight, innerCurveWeight) {
   let innerCurves = [];
 
@@ -4101,7 +3995,7 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
 
   // モデルの種類ごとにパラメータを定義
   let params = {
-    ume: {
+    ume: {//実寸大のcm：{インナーカーブの本数、外側の太さ、水引の太さ、必要素材}
       1.0: { numInnerCurves: 1, outerCurveWeight: 15, innerCurveWeight: 5 , materialCm: 23},
       1.5: { numInnerCurves: 2, outerCurveWeight: 18, innerCurveWeight: 5 , materialCm: 30 },
       2.3: { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5 , materialCm: 45 },
@@ -4117,8 +4011,8 @@ function decideSizeParameters(shape, type, circleDiameter, shapeWidth, shapeLeng
       3: { numInnerCurves: 5, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 23 },
       3.5: { numInnerCurves: 6, outerCurveWeight: 33, innerCurveWeight: 5 , materialCm: 30 }
     },
-    renzoku: {
-      2: {
+    renzoku: {//連続あわじが何段かの数
+      2: {//横１cm、縦1.5cm（1-1.5）
         '1-1.5': { numInnerCurves: 1, outerCurveWeight: 8, innerCurveWeight: 5, materialCm: 23 },
         '1.5-2': { numInnerCurves: 2, outerCurveWeight: 16, innerCurveWeight: 5, materialCm: 23 },
         '2-3': { numInnerCurves: 3, outerCurveWeight: 22, innerCurveWeight: 5, materialCm: 30 },
@@ -4369,6 +4263,8 @@ function getMaterialColor (){
             }
           }
         });
+
+        //4分の１と3分の１の長さになるように無理矢理変換
         material.forEach(item => {
           if (item.cm === 53) {
             item.cm = 60;
@@ -4616,7 +4512,7 @@ function updateMaterialsList() {
   drawShape(p, newShape, layerIndex, index, 0, -1, combinedPoints);
 }*/
 
-//切断を踏まえて
+//切断を踏まえて図形同士の接続関数
 function drawConnect (p, shape1, layerIndex, index, adjustedPoints1, parts_f, processNo){
   // 接続先の図形を取得
   let shape2, shape1ConnectSet, shape2ConnectSet;
@@ -4634,6 +4530,7 @@ function drawConnect (p, shape1, layerIndex, index, adjustedPoints1, parts_f, pr
   //let adjustedPoints2 = adjustControlPoints(shape);
 
   // shape1が結合点を向いていて反対側が接続している場合、adjustControlPointsで中央を擬似接続にする
+  //ここを擬似接続にしないとループになるので
   if (shape1ConnectSet == 0 && !shape1.flags.middle) {
     //shape1.flags.middle = shape1.flags.end;
     shape1.flags.end = true;
@@ -5233,7 +5130,7 @@ function adjustControlPoints(shape) {
     if (middlePoint) {
       // 各要素を展開して中央に挿入
       if (shape.type === 'renzoku') {
-        let addY = shape.renzokuNum * 60 - 80;
+        let addY = shape.renzokuNum * 60 - 80;//連続数に合わせて補助配列をy軸方向にずらしてから挿入
         adjusted.splice(midIndex, 0, ...middlePoint.map(point => ({ 
           ...point, 
           y: point.y + addY 
@@ -5259,6 +5156,8 @@ function adjustControlPoints(shape) {
     adjusted[0] = firstCurve;
     adjusted[1] = secondCurve;
   }
+
+  //端（上部）の擬似接続
   if (!shape.flags.end) {
     if (Array.isArray(adjusted[0])) {//切断された場合
       adjusted[0].shift();// adjusted配列の最初の要素を削除
@@ -5571,6 +5470,7 @@ function getConnectShapeProcess (p, shape1, layerIndex, shapeIndex, processNo) {
     }*/
   }
 
+  /*
   const getPoints = (shape) => {//今のところ使わない
     let points;
     let scaleValue=1.62;
@@ -5595,6 +5495,7 @@ function getConnectShapeProcess (p, shape1, layerIndex, shapeIndex, processNo) {
       }))
     );
   };
+  */
 
   drawShape(p, newShape, layerIndex, shapeIndex, 1, processNo, processPoints);
 }
